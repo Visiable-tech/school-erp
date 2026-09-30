@@ -8,12 +8,12 @@
 
     <div>
         <h4 class="mb-1">
-            Add Fee Structure
+            Add Fee Template
         </h4>
 
-        <div class="text-muted">
-            Configure fees for an academic year and class.
-        </div>
+        <small class="text-muted">
+            Fee Management → Setup → Fee Templates
+        </small>
     </div>
 
     <a
@@ -43,12 +43,12 @@
 
             <div class="mt-4">
 
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                >
-                    <i class="bi bi-check-circle me-1"></i>
-                    Save Fee Structure
+                <button type="submit"
+                        class="btn btn-primary">
+
+                    <i class="bi bi-check-circle"></i>
+                    Save Fee Template
+
                 </button>
 
                 <a

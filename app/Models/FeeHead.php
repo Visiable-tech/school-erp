@@ -11,16 +11,32 @@ class FeeHead extends Model
 
     protected $fillable = [
         'school_id',
+        'fee_component_group_id',
+        'fee_cycle_id',
+
         'name',
         'code',
+
+        // Legacy field - retained during migration
         'frequency',
+
         'is_optional',
+        'is_refundable',
+        'allow_concession',
+        'allow_waiver',
+
+        'description',
+
         'sort_order',
         'status',
     ];
 
     protected $casts = [
         'is_optional' => 'boolean',
+        'is_refundable' => 'boolean',
+        'allow_concession' => 'boolean',
+        'allow_waiver' => 'boolean',
+        'sort_order' => 'integer',
         'status' => 'boolean',
     ];
 
@@ -29,9 +45,27 @@ class FeeHead extends Model
         return $this->belongsTo(School::class);
     }
 
+    public function componentGroup()
+    {
+        return $this->belongsTo(
+            FeeComponentGroup::class,
+            'fee_component_group_id'
+        );
+    }
+
+    public function feeCycle()
+    {
+        return $this->belongsTo(
+            FeeCycle::class,
+            'fee_cycle_id'
+        );
+    }
+
     public function structureItems()
     {
-        return $this->hasMany(FeeStructureItem::class);
+        return $this->hasMany(
+            FeeStructureItem::class
+        );
     }
 
     public function feeStructures()
@@ -40,11 +74,11 @@ class FeeHead extends Model
             FeeStructure::class,
             'fee_structure_items'
         )
-        ->withPivot([
-            'amount',
-            'sort_order',
-            'status'
-        ])
-        ->withTimestamps();
+            ->withPivot([
+                'amount',
+                'sort_order',
+                'status'
+            ])
+            ->withTimestamps();
     }
 }

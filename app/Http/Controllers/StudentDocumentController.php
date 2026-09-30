@@ -24,34 +24,230 @@ class StudentDocumentController extends Controller
     {
         $schoolId = auth()->user()->school_id;
 
+        /*
+        |--------------------------------------------------------------------------
+        | Filter Data
+        |--------------------------------------------------------------------------
+        */
+
+        $academicYears = AcademicYear::where('school_id', $schoolId)
+            ->where('status', 1)
+            ->orderByDesc('start_date')
+            ->get();
+
+        $classes = SchoolClass::where('school_id', $schoolId)
+            ->where('status', 1)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        $sections = collect();
+
+        if (
+            $request->filled('academic_year_id') &&
+            $request->filled('school_class_id')
+        ) {
+            $sections = Section::where('school_id', $schoolId)
+                ->where(
+                    'academic_year_id',
+                    $request->academic_year_id
+                )
+                ->where(
+                    'school_class_id',
+                    $request->school_class_id
+                )
+                ->where('status', 1)
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get();
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Documents Query
+        |--------------------------------------------------------------------------
+        */
+
         $documents = StudentDocument::with([
-                'student',
+                'student.currentEnrollment.academicYear',
+                'student.currentEnrollment.schoolClass',
+                'student.currentEnrollment.section',
                 'uploader',
             ])
             ->where('school_id', $schoolId)
 
-            ->when($request->search, function ($query, $search) {
 
-                $query->where(function ($q) use ($search) {
-
-                    $q->where('document_name', 'like', "%{$search}%")
-                        ->orWhere('document_number', 'like', "%{$search}%")
-                        ->orWhere('document_type', 'like', "%{$search}%")
-
-                        ->orWhereHas('student', function ($studentQuery) use ($search) {
-
-                            $studentQuery
-                                ->where('student_name', 'like', "%{$search}%")
-                                ->orWhere('admission_no', 'like', "%{$search}%");
-                        });
-                });
-            })
+            /*
+            |--------------------------------------------------------------------------
+            | General Search
+            |--------------------------------------------------------------------------
+            */
 
             ->when(
-                $request->document_type,
-                fn ($query, $type) =>
-                    $query->where('document_type', $type)
+                $request->filled('search'),
+                function ($query) use ($request) {
+
+                    $search = trim($request->search);
+
+                    $query->where(
+                        function ($q) use ($search) {
+
+                            $q->where(
+                                'document_name',
+                                'like',
+                                "%{$search}%"
+                            )
+                            ->orWhere(
+                                'document_number',
+                                'like',
+                                "%{$search}%"
+                            )
+                            ->orWhere(
+                                'document_type',
+                                'like',
+                                "%{$search}%"
+                            )
+                            ->orWhereHas(
+                                'student',
+                                function ($studentQuery) use ($search) {
+
+                                    $studentQuery
+                                        ->where(
+                                            'student_name',
+                                            'like',
+                                            "%{$search}%"
+                                        )
+                                        ->orWhere(
+                                            'admission_no',
+                                            'like',
+                                            "%{$search}%"
+                                        )
+                                        ->orWhere(
+                                            'father_name',
+                                            'like',
+                                            "%{$search}%"
+                                        )
+                                        ->orWhere(
+                                            'father_mobile',
+                                            'like',
+                                            "%{$search}%"
+                                        );
+                                }
+                            );
+                        }
+                    );
+                }
             )
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Document Type
+            |--------------------------------------------------------------------------
+            */
+
+            ->when(
+                $request->filled('document_type'),
+                function ($query) use ($request) {
+
+                    $query->where(
+                        'document_type',
+                        $request->document_type
+                    );
+                }
+            )
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Document Status
+            |--------------------------------------------------------------------------
+            */
+
+            ->when(
+                $request->filled('status'),
+                function ($query) use ($request) {
+
+                    $query->where(
+                        'status',
+                        $request->status
+                    );
+                }
+            )
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Academic Year
+            |--------------------------------------------------------------------------
+            */
+
+            ->when(
+                $request->filled('academic_year_id'),
+                function ($query) use ($request) {
+
+                    $query->whereHas(
+                        'student.currentEnrollment',
+                        function ($enrollmentQuery) use ($request) {
+
+                            $enrollmentQuery->where(
+                                'academic_year_id',
+                                $request->academic_year_id
+                            );
+                        }
+                    );
+                }
+            )
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Class
+            |--------------------------------------------------------------------------
+            */
+
+            ->when(
+                $request->filled('school_class_id'),
+                function ($query) use ($request) {
+
+                    $query->whereHas(
+                        'student.currentEnrollment',
+                        function ($enrollmentQuery) use ($request) {
+
+                            $enrollmentQuery->where(
+                                'school_class_id',
+                                $request->school_class_id
+                            );
+                        }
+                    );
+                }
+            )
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Section
+            |--------------------------------------------------------------------------
+            */
+
+            ->when(
+                $request->filled('section_id'),
+                function ($query) use ($request) {
+
+                    $query->whereHas(
+                        'student.currentEnrollment',
+                        function ($enrollmentQuery) use ($request) {
+
+                            $enrollmentQuery->where(
+                                'section_id',
+                                $request->section_id
+                            );
+                        }
+                    );
+                }
+            )
+
 
             ->latest('id')
             ->paginate(20)
@@ -60,7 +256,12 @@ class StudentDocumentController extends Controller
 
         return view(
             'student-documents.index',
-            compact('documents')
+            compact(
+                'documents',
+                'academicYears',
+                'classes',
+                'sections'
+            )
         );
     }
 

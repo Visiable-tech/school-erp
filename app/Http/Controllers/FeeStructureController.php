@@ -8,6 +8,7 @@ use App\Models\FeeStructure;
 use App\Models\FeeStructureItem;
 use App\Models\SchoolClass;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -15,12 +16,13 @@ class FeeStructureController extends Controller
 {
     public function index(Request $request)
     {
-        $schoolId = auth()->user()->school_id;
+        $schoolId = Auth::user()->school_id;
 
         $query = FeeStructure::with([
                 'academicYear',
                 'schoolClass',
-                'items.feeHead',
+                'items.feeHead.componentGroup',
+                'items.feeHead.feeCycle',
             ])
             ->where('school_id', $schoolId);
 
@@ -39,7 +41,6 @@ class FeeStructureController extends Controller
         }
 
         if ($request->filled('search')) {
-
             $search = trim($request->search);
 
             $query->where(
@@ -49,8 +50,18 @@ class FeeStructureController extends Controller
             );
         }
 
+        if (
+            $request->filled('status') &&
+            in_array($request->status, ['0', '1'], true)
+        ) {
+            $query->where(
+                'status',
+                $request->status
+            );
+        }
+
         $feeStructures = $query
-            ->orderByDesc('id')
+            ->latest('id')
             ->paginate(20)
             ->withQueryString();
 
@@ -58,7 +69,6 @@ class FeeStructureController extends Controller
                 'school_id',
                 $schoolId
             )
-            ->where('status', 1)
             ->orderByDesc('start_date')
             ->get();
 
@@ -84,13 +94,12 @@ class FeeStructureController extends Controller
 
     public function create()
     {
-        $schoolId = auth()->user()->school_id;
+        $schoolId = Auth::user()->school_id;
 
         $academicYears = AcademicYear::where(
                 'school_id',
                 $schoolId
             )
-            ->where('status', 1)
             ->orderByDesc('start_date')
             ->get();
 
@@ -103,30 +112,16 @@ class FeeStructureController extends Controller
             ->orderBy('name')
             ->get();
 
-        $feeHeads = FeeHead::where(
-                'school_id',
-                $schoolId
-            )
-            ->where('status', 1)
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get();
-
-        $currentAcademicYear = AcademicYear::where(
-                'school_id',
-                $schoolId
-            )
-            ->where('is_current', 1)
-            ->where('status', 1)
-            ->first();
+        $feeHeads = $this->getFeeComponents(
+            $schoolId
+        );
 
         return view(
             'fee-structures.create',
             compact(
                 'academicYears',
                 'classes',
-                'feeHeads',
-                'currentAcademicYear'
+                'feeHeads'
             )
         );
     }
@@ -134,74 +129,17 @@ class FeeStructureController extends Controller
 
     public function store(Request $request)
     {
-        $schoolId = auth()->user()->school_id;
+        $schoolId = Auth::user()->school_id;
 
         $validated = $this->validateData(
             $request,
             $schoolId
         );
 
-        /*
-         * Verify Academic Year belongs to this school.
-         */
-        AcademicYear::where('school_id', $schoolId)
-            ->where('id', $validated['academic_year_id'])
-            ->where('status', 1)
-            ->firstOrFail();
-
-        /*
-         * Verify Class belongs to this school.
-         */
-        SchoolClass::where('school_id', $schoolId)
-            ->where('id', $validated['school_class_id'])
-            ->where('status', 1)
-            ->firstOrFail();
-
-
-        /*
-         * Verify all submitted Fee Heads.
-         */
-        $submittedHeadIds = collect(
-            $validated['items']
-        )
-            ->pluck('fee_head_id')
-            ->map(fn ($id) => (int) $id)
-            ->unique()
-            ->values();
-
-
-        if (
-            $submittedHeadIds->count() !==
-            count($validated['items'])
-        ) {
-            return back()
-                ->withInput()
-                ->withErrors([
-                    'items' =>
-                        'The same Fee Head cannot be added more than once.'
-                ]);
-        }
-
-
-        $validHeadCount = FeeHead::where(
-                'school_id',
-                $schoolId
-            )
-            ->where('status', 1)
-            ->whereIn('id', $submittedHeadIds)
-            ->count();
-
-
-        if ($validHeadCount !== $submittedHeadIds->count()) {
-
-            return back()
-                ->withInput()
-                ->withErrors([
-                    'items' =>
-                        'One or more selected Fee Heads are invalid.'
-                ]);
-        }
-
+        $this->validateComponents(
+            $validated['items'],
+            $schoolId
+        );
 
         DB::transaction(function () use (
             $validated,
@@ -209,7 +147,6 @@ class FeeStructureController extends Controller
         ) {
 
             $structure = FeeStructure::create([
-
                 'school_id' =>
                     $schoolId,
 
@@ -220,24 +157,19 @@ class FeeStructureController extends Controller
                     $validated['school_class_id'],
 
                 'name' =>
-                    $validated['name'],
+                    trim($validated['name']),
 
                 'description' =>
                     $validated['description'] ?? null,
 
                 'status' =>
-                    request()->boolean('status'),
-
+                    $validated['status'] ?? true,
             ]);
 
-
             foreach (
-                $validated['items']
-                as $index => $item
+                $validated['items'] as $index => $item
             ) {
-
                 FeeStructureItem::create([
-
                     'fee_structure_id' =>
                         $structure->id,
 
@@ -250,36 +182,38 @@ class FeeStructureController extends Controller
                     'sort_order' =>
                         $index + 1,
 
-                    'status' =>
-                        true,
-
+                    'status' => true,
                 ]);
             }
         });
-
 
         return redirect()
             ->route('fee-structures.index')
             ->with(
                 'success',
-                'Fee Structure created successfully.'
+                'Fee Template created successfully.'
             );
     }
 
 
-    public function edit(FeeStructure $feeStructure)
-    {
-        $this->authorizeSchool($feeStructure);
+    public function edit(
+        FeeStructure $feeStructure
+    ) {
+        $this->authorizeSchool(
+            $feeStructure
+        );
 
-        $schoolId = auth()->user()->school_id;
+        $schoolId = Auth::user()->school_id;
 
-        $feeStructure->load('items.feeHead');
+        $feeStructure->load([
+            'items.feeHead.componentGroup',
+            'items.feeHead.feeCycle',
+        ]);
 
         $academicYears = AcademicYear::where(
                 'school_id',
                 $schoolId
             )
-            ->where('status', 1)
             ->orderByDesc('start_date')
             ->get();
 
@@ -293,33 +227,25 @@ class FeeStructureController extends Controller
             ->get();
 
         /*
-         * Include inactive heads already attached to
-         * this structure so old data can still be edited.
+         * Include active components plus
+         * components already used in template.
          */
-        $usedHeadIds = $feeStructure
+        $usedIds = $feeStructure
             ->items
             ->pluck('fee_head_id');
 
-        $feeHeads = FeeHead::where(
-                'school_id',
-                $schoolId
-            )
-            ->where(function ($query) use ($usedHeadIds) {
-
-                $query->where('status', 1);
-
-                if ($usedHeadIds->isNotEmpty()) {
-                    $query->orWhereIn(
-                        'id',
-                        $usedHeadIds
-                    );
-                }
-
+        $feeHeads = FeeHead::with([
+                'componentGroup',
+                'feeCycle',
+            ])
+            ->where('school_id', $schoolId)
+            ->where(function ($query) use ($usedIds) {
+                $query->where('status', 1)
+                    ->orWhereIn('id', $usedIds);
             })
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
-
 
         return view(
             'fee-structures.edit',
@@ -337,80 +263,49 @@ class FeeStructureController extends Controller
         Request $request,
         FeeStructure $feeStructure
     ) {
-        $this->authorizeSchool($feeStructure);
+        $this->authorizeSchool(
+            $feeStructure
+        );
 
-        $schoolId = auth()->user()->school_id;
+        $schoolId = Auth::user()->school_id;
 
         $validated = $this->validateData(
             $request,
             $schoolId,
-            $feeStructure
+            $feeStructure->id
         );
 
+        $this->validateComponents(
+            $validated['items'],
+            $schoolId
+        );
 
-        AcademicYear::where('school_id', $schoolId)
-            ->where('id', $validated['academic_year_id'])
-            ->firstOrFail();
+        /*
+         * Once students have compiled dues,
+         * we should not destructively rebuild
+         * the template.
+         */
+        $hasGeneratedInstallments =
+            $feeStructure
+                ->items()
+                ->whereHas('installments')
+                ->exists();
 
-        SchoolClass::where('school_id', $schoolId)
-            ->where('id', $validated['school_class_id'])
-            ->firstOrFail();
-
-
-        $submittedHeadIds = collect(
-            $validated['items']
-        )
-            ->pluck('fee_head_id')
-            ->map(fn ($id) => (int) $id);
-
-
-        if (
-            $submittedHeadIds->unique()->count()
-            !==
-            $submittedHeadIds->count()
-        ) {
-
+        if ($hasGeneratedInstallments) {
             return back()
                 ->withInput()
-                ->withErrors([
-                    'items' =>
-                        'The same Fee Head cannot be added more than once.'
-                ]);
+                ->with(
+                    'error',
+                    'This Fee Template already has generated installments. Its components cannot be rebuilt. Create a new Fee Template instead.'
+                );
         }
-
-
-        $validHeadCount = FeeHead::where(
-                'school_id',
-                $schoolId
-            )
-            ->whereIn(
-                'id',
-                $submittedHeadIds
-            )
-            ->count();
-
-
-        if (
-            $validHeadCount !==
-            $submittedHeadIds->count()
-        ) {
-
-            return back()
-                ->withInput()
-                ->withErrors([
-                    'items' =>
-                        'One or more selected Fee Heads are invalid.'
-                ]);
-        }
-
 
         DB::transaction(function () use (
-            $feeStructure,
-            $validated
+            $validated,
+            $feeStructure
         ) {
 
             $feeStructure->update([
-
                 'academic_year_id' =>
                     $validated['academic_year_id'],
 
@@ -418,35 +313,25 @@ class FeeStructureController extends Controller
                     $validated['school_class_id'],
 
                 'name' =>
-                    $validated['name'],
+                    trim($validated['name']),
 
                 'description' =>
                     $validated['description'] ?? null,
 
                 'status' =>
-                    request()->boolean('status'),
-
+                    $validated['status'] ?? true,
             ]);
 
-
             /*
-             * Safe for now because payments/student
-             * assignments do not exist yet.
-             *
-             * Once Fee Collection is live we will stop
-             * destructive rebuilding of historical items.
+             * Safe only because we blocked
+             * templates having installments.
              */
-
             $feeStructure->items()->delete();
 
-
             foreach (
-                $validated['items']
-                as $index => $item
+                $validated['items'] as $index => $item
             ) {
-
                 FeeStructureItem::create([
-
                     'fee_structure_id' =>
                         $feeStructure->id,
 
@@ -459,19 +344,16 @@ class FeeStructureController extends Controller
                     'sort_order' =>
                         $index + 1,
 
-                    'status' =>
-                        true,
-
+                    'status' => true,
                 ]);
             }
         });
-
 
         return redirect()
             ->route('fee-structures.index')
             ->with(
                 'success',
-                'Fee Structure updated successfully.'
+                'Fee Template updated successfully.'
             );
     }
 
@@ -479,21 +361,57 @@ class FeeStructureController extends Controller
     public function destroy(
         FeeStructure $feeStructure
     ) {
-        $this->authorizeSchool($feeStructure);
+        $this->authorizeSchool(
+            $feeStructure
+        );
 
         /*
-         * Later:
-         * Block deletion if assigned to students
-         * or used by fee transactions.
+         * Existing student assignments
+         * must protect financial history.
          */
+        if (
+            method_exists(
+                $feeStructure,
+                'studentAssignments'
+            ) &&
+            $feeStructure
+                ->studentAssignments()
+                ->exists()
+        ) {
+            return back()->with(
+                'error',
+                'This Fee Template is already assigned to students and cannot be deleted.'
+            );
+        }
 
-        $feeStructure->delete();
+        if (
+            $feeStructure
+                ->items()
+                ->whereHas('installments')
+                ->exists()
+        ) {
+            return back()->with(
+                'error',
+                'This Fee Template has generated installments and cannot be deleted.'
+            );
+        }
+
+        DB::transaction(
+            function () use ($feeStructure) {
+
+                $feeStructure
+                    ->items()
+                    ->delete();
+
+                $feeStructure->delete();
+            }
+        );
 
         return redirect()
             ->route('fee-structures.index')
             ->with(
                 'success',
-                'Fee Structure deleted successfully.'
+                'Fee Template deleted successfully.'
             );
     }
 
@@ -501,7 +419,7 @@ class FeeStructureController extends Controller
     private function validateData(
         Request $request,
         int $schoolId,
-        ?FeeStructure $feeStructure = null
+        ?int $ignoreId = null
     ): array {
 
         return $request->validate([
@@ -509,11 +427,33 @@ class FeeStructureController extends Controller
             'academic_year_id' => [
                 'required',
                 'integer',
+
+                Rule::exists(
+                    'academic_years',
+                    'id'
+                )->where(
+                    fn ($query) =>
+                        $query->where(
+                            'school_id',
+                            $schoolId
+                        )
+                ),
             ],
 
             'school_class_id' => [
                 'required',
                 'integer',
+
+                Rule::exists(
+                    'school_classes',
+                    'id'
+                )->where(
+                    fn ($query) =>
+                        $query->where(
+                            'school_id',
+                            $schoolId
+                        )
+                ),
             ],
 
             'name' => [
@@ -525,9 +465,6 @@ class FeeStructureController extends Controller
                     'fee_structures',
                     'name'
                 )
-                    ->ignore(
-                        $feeStructure?->id
-                    )
                     ->where(
                         fn ($query) =>
                             $query
@@ -537,31 +474,92 @@ class FeeStructureController extends Controller
                                 )
                                 ->where(
                                     'academic_year_id',
-                                    $request->academic_year_id
+                                    $request
+                                        ->academic_year_id
                                 )
                                 ->where(
                                     'school_class_id',
-                                    $request->school_class_id
+                                    $request
+                                        ->school_class_id
                                 )
-                    ),
+                    )
+                    ->ignore($ignoreId),
             ],
 
-            'description' =>
-                'nullable|string|max:1000',
+            'description' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
 
-            'status' =>
-                'nullable|boolean',
+            'status' => [
+                'nullable',
+                'boolean',
+            ],
 
-            'items' =>
-                'required|array|min:1',
+            'items' => [
+                'required',
+                'array',
+                'min:1',
+            ],
 
-            'items.*.fee_head_id' =>
-                'required|integer',
+            'items.*.fee_head_id' => [
+                'required',
+                'integer',
+                'distinct',
+            ],
 
-            'items.*.amount' =>
-                'required|numeric|min:0|max:9999999999.99',
-
+            'items.*.amount' => [
+                'required',
+                'numeric',
+                'min:0',
+                'max:9999999999.99',
+            ],
         ]);
+    }
+
+
+    private function validateComponents(
+        array $items,
+        int $schoolId
+    ): void {
+
+        $ids = collect($items)
+            ->pluck('fee_head_id')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $validCount = FeeHead::where(
+                'school_id',
+                $schoolId
+            )
+            ->whereIn('id', $ids)
+            ->count();
+
+        abort_if(
+            $validCount !== $ids->count(),
+            422,
+            'Invalid Fee Component selected.'
+        );
+    }
+
+
+    private function getFeeComponents(
+        int $schoolId
+    ) {
+        return FeeHead::with([
+                'componentGroup',
+                'feeCycle',
+            ])
+            ->where(
+                'school_id',
+                $schoolId
+            )
+            ->where('status', 1)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
     }
 
 
@@ -571,7 +569,7 @@ class FeeStructureController extends Controller
 
         abort_unless(
             (int) $feeStructure->school_id ===
-            (int) auth()->user()->school_id,
+            (int) Auth::user()->school_id,
             403
         );
     }

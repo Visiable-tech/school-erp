@@ -275,388 +275,1351 @@
 
 
         {{-- =========================================================
-     STUDENT INFORMATION
-========================================================= --}}
+            STUDENT INFORMATION SYSTEM
+        ========================================================= --}}
 
-    @php
+        @php
 
-        $studentMenuOpen =
-            request()->routeIs('students.*')
-            || request()->routeIs('student-enrollments.*')
-            || request()->routeIs('student-promotions.*')
-            || request()->routeIs('student-documents.*');
+            /*
+            |--------------------------------------------------------------------------
+            | Student Masters
+            |--------------------------------------------------------------------------
+            */
 
-    @endphp
+            $studentMastersOpen = request()->routeIs(
+                'tc-reasons.*',
+                'tc-remark-options.*',
+                'tc-last-result-options.*',
+                'promotion-statuses.*'
+            );
 
-    @canany([
-        'student.view',
-        'student.create',
-        'student.edit',
-        'student-enrollment.view',
-        'student-enrollment.create',
-        'student-enrollment.edit',
-        'student-promotion.view',
-        'student-promotion.create',
-        'student-document.view',
-        'student-document.create',
-        'student-document.edit',
-        'student-document.delete',
-    ])
+
+            /*
+            |--------------------------------------------------------------------------
+            | Student Management
+            |--------------------------------------------------------------------------
+            */
+
+            $studentManagementOpen = request()->routeIs(
+                'student-management.*',
+                'student-promotions.*'
+            );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Main Student Information System
+            |--------------------------------------------------------------------------
+            |
+            | Keep the complete Student Information System open whenever
+            | any student-related route is active.
+            |
+            */
+
+            $studentInformationOpen = request()->routeIs(
+                'students.*',
+
+                'tc-reasons.*',
+                'tc-remark-options.*',
+                'tc-last-result-options.*',
+                'promotion-statuses.*',
+
+                'student-enrollments.*',
+                'student-promotions.*',
+                'student-documents.*',
+
+                'student-management.*'
+            );
+
+        @endphp
+
+
+        {{-- =========================================================
+            MAIN STUDENT INFORMATION SYSTEM BUTTON
+        ========================================================= --}}
 
         <a
             data-bs-toggle="collapse"
-            href="#studentMenu"
+            href="#studentInformationSystemMenu"
             role="button"
-            aria-expanded="{{ $studentMenuOpen ? 'true' : 'false' }}"
-            aria-controls="studentMenu"
-            class="{{ $studentMenuOpen ? 'active' : '' }}"
+            aria-expanded="{{ $studentInformationOpen ? 'true' : 'false' }}"
+            aria-controls="studentInformationSystemMenu"
+            class="{{ $studentInformationOpen ? 'active' : '' }}"
         >
-            <i class="bi bi-people"></i>
+
+            <i class="bi bi-mortarboard"></i>
 
             <span class="flex-grow-1">
-                Students
+                Student Information
             </span>
 
-            <i class="bi bi-chevron-down"></i>
+            <i
+                class="bi bi-chevron-down sidebar-arrow"
+            ></i>
+
         </a>
 
 
+        {{-- =========================================================
+            MAIN STUDENT INFORMATION SYSTEM COLLAPSE
+        ========================================================= --}}
+
         <div
-            class="collapse {{ $studentMenuOpen ? 'show' : '' }}"
-            id="studentMenu"
+            class="collapse {{ $studentInformationOpen ? 'show' : '' }}"
+            id="studentInformationSystemMenu"
         >
 
             <div class="sidebar-submenu">
 
-                {{-- Student List --}}
+
+                {{-- =====================================================
+                    DASHBOARD
+                ====================================================== --}}
+
+                {{-- Student Dashboard route can be connected later --}}
+
+                <a href="#">
+
+                    <i class="bi bi-speedometer2 me-2"></i>
+
+                    Dashboard
+
+                </a>
+
+
+                {{-- =====================================================
+                    MASTERS
+                ====================================================== --}}
+
+                <a
+                    data-bs-toggle="collapse"
+                    href="#studentMastersMenu"
+                    role="button"
+                    aria-expanded="{{ $studentMastersOpen ? 'true' : 'false' }}"
+                    aria-controls="studentMastersMenu"
+                    class="{{ $studentMastersOpen ? 'active' : '' }}"
+                >
+
+                    <i class="bi bi-gear me-2"></i>
+
+                    <span class="flex-grow-1">
+                        Masters
+                    </span>
+
+                    <i
+                        class="bi bi-chevron-down sidebar-arrow"
+                    ></i>
+
+                </a>
+
+
+                <div
+                    class="collapse {{ $studentMastersOpen ? 'show' : '' }}"
+                    id="studentMastersMenu"
+                >
+
+                    <div class="sidebar-submenu">
+
+
+                        @can('tc-reason.view')
+
+                            <a
+                                href="{{ route('tc-reasons.index') }}"
+                                class="{{
+                                    request()->routeIs('tc-reasons.*')
+                                    ? 'active'
+                                    : ''
+                                }}"
+                            >
+                                T.C. Reasons
+                            </a>
+
+                        @endcan
+
+
+                        @can('tc-remark-option.view')
+
+                            <a
+                                href="{{ route('tc-remark-options.index') }}"
+                                class="{{
+                                    request()->routeIs('tc-remark-options.*')
+                                    ? 'active'
+                                    : ''
+                                }}"
+                            >
+                                T.C. Remark Options
+                            </a>
+
+                        @endcan
+
+
+                        @can('tc-last-result-option.view')
+
+                            <a
+                                href="{{ route('tc-last-result-options.index') }}"
+                                class="{{
+                                    request()->routeIs('tc-last-result-options.*')
+                                    ? 'active'
+                                    : ''
+                                }}"
+                            >
+                                T.C. Last Result Options
+                            </a>
+
+                        @endcan
+
+
+                        @can('promotion-status.view')
+
+                            <a
+                                href="{{ route('promotion-statuses.index') }}"
+                                class="{{
+                                    request()->routeIs('promotion-statuses.*')
+                                    ? 'active'
+                                    : ''
+                                }}"
+                            >
+                                Promotion Statuses
+                            </a>
+
+                        @endcan
+
+
+                    </div>
+
+                </div>
+
+
+                {{-- =====================================================
+                    STUDENT LIST
+                ====================================================== --}}
+
                 @can('student.view')
 
                     <a
                         href="{{ route('students.index') }}"
-                        class="{{ request()->routeIs('students.*') ? 'active' : '' }}"
-                    >
-                        <i class="bi bi-list-ul me-2"></i>
-                        Student List
-                    </a>
-
-                @endcan
-
-
-                {{-- Add Student --}}
-                @can('student.create')
-
-                    <a
-                        href="{{ route('students.create') }}"
-                        class="{{ request()->routeIs('students.create') ? 'active' : '' }}"
-                    >
-                        <i class="bi bi-person-plus me-2"></i>
-                        Add Student
-                    </a>
-
-                @endcan
-
-                @can('student.create')
-
-                    <a
-                        href="{{ route('students.import') }}"
                         class="{{
-                            request()->routeIs('students.import*')
-                                ? 'active'
-                                : ''
+                            request()->routeIs('students.index')
+                            ||
+                            request()->routeIs('students.show')
+                            ? 'active'
+                            : ''
                         }}"
                     >
-                        <i class="bi bi-file-earmark-excel me-2"></i>
-                        Import Students
+
+                        <i class="bi bi-list-ul me-2"></i>
+
+                        Student List
+
                     </a>
 
                 @endcan
 
 
-                {{-- Student Promotion --}}
-                @can('student-promotion.view')
+                {{-- =====================================================
+                    EDITABLE STUDENT LIST
+                ====================================================== --}}
+
+                @can('student.edit')
 
                     <a
-                        href="{{ route('student-promotions.index') }}"
-                        class="{{ request()->routeIs('student-promotions.*') ? 'active' : '' }}"
+                        href="{{ route('students.editable-list') }}"
+                        class="{{
+                            request()->routeIs(
+                                'students.editable-list*'
+                            )
+                            ? 'active'
+                            : ''
+                        }}"
                     >
-                        <i class="bi bi-arrow-up-circle me-2"></i>
-                        Student Promotion
+
+                        <i class="bi bi-pencil-square me-2"></i>
+
+                        Editable Student List
+
                     </a>
 
                 @endcan
+
+
+                {{-- =====================================================
+                    UPDATE STUDENT IMAGES
+                ====================================================== --}}
+
+                @can('student.edit')
+
+                    <a
+                        href="{{ route('students.images') }}"
+                        class="{{
+                            request()->routeIs(
+                                'students.images*'
+                            )
+                            ? 'active'
+                            : ''
+                        }}"
+                    >
+
+                        <i class="bi bi-camera me-2"></i>
+
+                        Update Student Images
+
+                    </a>
+
+                @endcan
+
+
+                {{-- =====================================================
+                    STUDENT MANAGEMENT
+                ====================================================== --}}
+
+                <a
+                    data-bs-toggle="collapse"
+                    href="#studentManagementMenu"
+                    role="button"
+                    aria-expanded="{{ $studentManagementOpen ? 'true' : 'false' }}"
+                    aria-controls="studentManagementMenu"
+                    class="{{ $studentManagementOpen ? 'active' : '' }}"
+                >
+
+                    <i class="bi bi-diagram-3 me-2"></i>
+
+                    <span class="flex-grow-1">
+                        Student Management
+                    </span>
+
+                    <i
+                        class="bi bi-chevron-down sidebar-arrow"
+                    ></i>
+
+                </a>
+
+
+                <div
+                    class="collapse {{ $studentManagementOpen ? 'show' : '' }}"
+                    id="studentManagementMenu"
+                >
+
+                    <div class="sidebar-submenu">
+
+
+                        {{-- Assign Roll No. --}}
+
+                        <a
+                            href="{{ route('student-management.assign-roll-no') }}"
+                            class="{{
+                                request()->routeIs(
+                                    'student-management.assign-roll-no*'
+                                )
+                                ? 'active'
+                                : ''
+                            }}"
+                        >
+                            Assign Roll No.
+                        </a>
+
+
+                        {{-- Section Change --}}
+
+                        <a
+                            href="{{ route('student-management.section-change') }}"
+                            class="{{
+                                request()->routeIs(
+                                    'student-management.section-change'
+                                )
+                                ? 'active'
+                                : ''
+                            }}"
+                        >
+                            Section Change
+                        </a>
+
+
+                        {{-- Section Change Multiple --}}
+
+                        <a
+                            href="{{
+                                route(
+                                    'student-management.section-change-multiple'
+                                )
+                            }}"
+                            class="{{
+                                request()->routeIs(
+                                    'student-management.section-change-multiple*'
+                                )
+                                ? 'active'
+                                : ''
+                            }}"
+                        >
+                            Section Change (Multiple)
+                        </a>
+
+
+                        {{-- Class Change --}}
+
+                        <a
+                            href="{{ route('student-management.class-change') }}"
+                            class="{{
+                                request()->routeIs(
+                                    'student-management.class-change*'
+                                )
+                                ? 'active'
+                                : ''
+                            }}"
+                        >
+                            Class Change
+                        </a>
+
+
+                        {{-- Type Change --}}
+
+                        <a
+                            href="{{ route('student-management.type-change') }}"
+                            class="{{
+                                request()->routeIs(
+                                    'student-management.type-change*'
+                                )
+                                ? 'active'
+                                : ''
+                            }}"
+                        >
+                            Type Change
+                        </a>
+
+
+                        {{-- Promotions / Repetitions --}}
+
+                        @can('student-promotion.view')
+
+                            <a
+                                href="{{ route('student-promotions.index') }}"
+                                class="{{
+                                    request()->routeIs(
+                                        'student-promotions.*'
+                                    )
+                                    ? 'active'
+                                    : ''
+                                }}"
+                            >
+                                Promotions/Repetitions
+                            </a>
+
+                        @endcan
+
+
+                        {{-- Suspension --}}
+
+                        <a
+                            href="{{ route('student-management.suspension') }}"
+                            class="{{
+                                request()->routeIs(
+                                    'student-management.suspension*'
+                                )
+                                ? 'active'
+                                : ''
+                            }}"
+                        >
+                            Suspension
+                        </a>
+
+
+                        {{-- De-registration --}}
+
+                        <a
+                            href="{{ route('student-management.deregistration') }}"
+                            class="{{
+                                request()->routeIs(
+                                    'student-management.deregistration*'
+                                )
+                                ? 'active'
+                                : ''
+                            }}"
+                        >
+                            De-registration
+                        </a>
+
+
+                        {{-- Transfer Certificate --}}
+
+                        <a
+                            href="{{
+                                route(
+                                    'student-management.transfer-certificate'
+                                )
+                            }}"
+                            class="{{
+                                request()->routeIs(
+                                    'student-management.transfer-certificate*'
+                                )
+                                ? 'active'
+                                : ''
+                            }}"
+                        >
+                            Transfer Certificate
+                        </a>
+
+
+                        {{-- Manual Transfer Certificate --}}
+
+                        <a
+                            href="{{
+                                route(
+                                    'student-management.manual-transfer-certificate'
+                                )
+                            }}"
+                            class="{{
+                                request()->routeIs(
+                                    'student-management.manual-transfer-certificate*'
+                                )
+                                ? 'active'
+                                : ''
+                            }}"
+                        >
+                            Manual Transfer Certificate
+                        </a>
+
+
+                        {{-- T.C Requests --}}
+
+                        <a
+                            href="{{ route('student-management.tc-requests') }}"
+                            class="{{
+                                request()->routeIs(
+                                    'student-management.tc-requests*'
+                                )
+                                ? 'active'
+                                : ''
+                            }}"
+                        >
+                            T.C Requests
+                        </a>
+
+
+                        {{-- Profile Modify Requests --}}
+
+                        <a
+                            href="{{
+                                route(
+                                    'student-management.profile-modify-requests'
+                                )
+                            }}"
+                            class="{{
+                                request()->routeIs(
+                                    'student-management.profile-modify-requests*'
+                                )
+                                ? 'active'
+                                : ''
+                            }}"
+                        >
+                            Profile Modify Requests
+                        </a>
+
+
+                    </div>
+
+                </div>
+
+
+                {{-- =====================================================
+                    STUDENT DOCUMENTS
+                ====================================================== --}}
 
                 @can('student-document.view')
 
-                    <a href="{{ route('student-documents.index') }}"
-                    class="{{ request()->routeIs('student-documents.*') ? 'active' : '' }}">
+                    <a
+                        href="{{ route('student-documents.index') }}"
+                        class="{{
+                            request()->routeIs(
+                                'student-documents.*'
+                            )
+                            ? 'active'
+                            : ''
+                        }}"
+                    >
 
                         <i class="bi bi-folder2-open me-2"></i>
+
                         Student Documents
 
                     </a>
 
                 @endcan
 
-                @can('student-attendance.create')
-
-                    <a
-                        href="{{ route('student-attendance.create') }}"
-                        class="nav-link
-                        {{ request()->routeIs('student-attendance.*') ? 'active' : '' }}"
-                    >
-
-                        <i class="bi bi-calendar-check me-2"></i>
-
-                        Student Attendance
-
-                    </a>
-
-                @endcan
 
             </div>
 
         </div>
 
-    @endcanany
+
+        {{-- =========================================================
+            FEE MANAGEMENT
+        ========================================================= --}}
+
+        @canany([
+            'fee-cycle.view',
+            'fee-head.view',
+            'fee-structure.view',
+            'fee-installment.view',
+
+            'student-fee-assignment.view',
+            'student-fee-assignment.create',
+            'student-fee-assignment.bulk-create',
+
+            'student-fee-due.view',
+
+            'fee-collection.view',
+            'fee-collection.create',
+            'fee-collection.cancel',
+            'fee-collection.receipt',
+
+            'fee-component-group.view',
+
+            'bank-master.view',
+            'misc-fee-component.view',
+            'school-account.view',
+            'fee-receipt-scheme.view',
+            'late-fee-fine.view',
+            'concession-type.view',
+            'payment-mode.view',
+            'cheque-bounce-reason.view',
+
+            'fee-compile.view',
+            'fee-compile-queue.view',
+
+            'student-fee-assignments.view',
+            'optional-fee-assignments.view',
+
+            'concession-assignment.view',
+            'fee-waiver-assignment.view',
+            'fine-waiver-assignment.view',
+            'composite-concession.view',
+
+            'fee-refunds.view',
+
+            'cheque-dd.view',
+            'cheque-dd.create',
+            'cheque-dd.edit',
+            'cheque-dd.deposit',
+            'cheque-dd.clear',
+            'cheque-dd.bounce',
+            'cheque-dd.cancel'
+        ])
+
+            @php
+
+                /*
+                |--------------------------------------------------------------------------
+                | Fee Setup
+                |--------------------------------------------------------------------------
+                */
+
+                $feeSetupOpen = request()->routeIs(
+                    'fee-cycles.*',
+                    'fee-component-groups.*',
+                    'fee-heads.*',
+                    'misc-fee-components.*',
+                    'bank-masters.*',
+                    'school-accounts.*',
+                    'fee-structures.*',
+                    'fee-receipt-schemes.*',
+                    'late-fee-fines.*',
+                    'concession-types.*',
+                    'fee-installments.*',
+                    'payment-modes.*',
+                    'cheque-bounce-reasons.*',
+                    'fee-compile.*',
+                    'fee-compile-queues.*'
+                );
 
 
-    {{-- Fees --}}
+                /*
+                |--------------------------------------------------------------------------
+                | Optional Assignments
+                |--------------------------------------------------------------------------
+                */
 
-    @canany([
-        'fee-head.view',
-        'fee-structure.view',
-        'fee-collection.view',
-        'fee-report.view'
-    ])
-
-        <div class="menu-title">
-            Finance
-        </div>
-
-
-        <a
-            data-bs-toggle="collapse"
-            href="#feeMenu"
-            role="button"
-            aria-expanded="{{ request()->routeIs('fee-*') ? 'true' : 'false' }}"
-        >
-
-            <i class="bi bi-cash-stack"></i>
-
-            <span class="flex-grow-1">
-                Fee Management
-            </span>
-
-            <i class="bi bi-chevron-down"></i>
-
-        </a>
+                $feeOptionalOpen = request()->routeIs(
+                    'student-fee-assignments.*',
+                    'optional-fee-assignments.*',
+                    'concession-assignments.*',
+                    'fee-waiver-assignments.*',
+                    'fine-waiver-assignments.*',
+                    'composite-concessions.*'
+                );
 
 
-        <div
-            class="collapse {{ request()->routeIs('fee-*') ? 'show' : '' }}"
-            id="feeMenu"
-        >
+                /*
+                |--------------------------------------------------------------------------
+                | Fee Collection
+                |--------------------------------------------------------------------------
+                */
 
-            <div class="sidebar-submenu">
+                $feeCollectionOpen = request()->routeIs(
+                    'fee-collections.*',
+                    'fee-receipts.*',
+                    'fee-refunds.*',
+                    'cheque-dd-details.*'
+                );
 
 
-                {{-- Fee Heads --}}
+                /*
+                |--------------------------------------------------------------------------
+                | Main Fee Management
+                |--------------------------------------------------------------------------
+                */
 
-                @can('fee-head.view')
+                $feeManagementOpen =
+                    request()->routeIs('fees.*')
+                    ||
+                    $feeSetupOpen
+                    ||
+                    $feeOptionalOpen
+                    ||
+                    $feeCollectionOpen;
+
+            @endphp
+
+
+            {{-- =====================================================
+                MAIN FEE MANAGEMENT BUTTON
+            ====================================================== --}}
+
+            <a
+                data-bs-toggle="collapse"
+                href="#feeManagementMenu"
+                role="button"
+                aria-expanded="{{ $feeManagementOpen ? 'true' : 'false' }}"
+                aria-controls="feeManagementMenu"
+                class="{{ $feeManagementOpen ? 'active' : '' }}"
+            >
+
+                <i class="bi bi-cash-stack"></i>
+
+                <span class="flex-grow-1">
+                    Fee Management
+                </span>
+
+                <i class="bi bi-chevron-down sidebar-arrow"></i>
+
+            </a>
+
+
+            {{-- =====================================================
+                MAIN FEE MANAGEMENT COLLAPSE
+            ====================================================== --}}
+
+            <div
+                class="collapse {{ $feeManagementOpen ? 'show' : '' }}"
+                id="feeManagementMenu"
+            >
+
+                <div class="sidebar-submenu">
+
+
+                    {{-- =================================================
+                        FEE DASHBOARD
+                    ================================================== --}}
 
                     <a
-                        href="{{ route('fee-heads.index') }}"
-                        class="{{ request()->routeIs('fee-heads.*') ? 'active' : '' }}"
+                        href="{{ route('fees.dashboard') }}"
+                        class="{{
+                            request()->routeIs('fees.dashboard')
+                            ? 'active'
+                            : ''
+                        }}"
                     >
-                        Fee Heads
+
+                        <i class="bi bi-speedometer2 me-2"></i>
+
+                        Dashboard
+
                     </a>
 
-                @endcan
 
-
-                {{-- Fee Structure --}}
-
-                @can('fee-structure.view')
+                    {{-- =================================================
+                        SETUP
+                    ================================================== --}}
 
                     <a
-                        href="{{ route('fee-structures.index') }}"
-                        class="{{ request()->routeIs('fee-structures.*') ? 'active' : '' }}"
+                        data-bs-toggle="collapse"
+                        href="#feeSetupMenu"
+                        role="button"
+                        aria-expanded="{{ $feeSetupOpen ? 'true' : 'false' }}"
+                        aria-controls="feeSetupMenu"
+                        class="{{ $feeSetupOpen ? 'active' : '' }}"
                     >
-                        Fee Structure
+
+                        <i class="bi bi-gear me-2"></i>
+
+                        <span class="flex-grow-1">
+                            Setup
+                        </span>
+
+                        <i class="bi bi-chevron-down sidebar-arrow"></i>
+
                     </a>
 
-                @endcan
+
+                    <div
+                        class="collapse {{ $feeSetupOpen ? 'show' : '' }}"
+                        id="feeSetupMenu"
+                    >
+
+                        <div class="sidebar-submenu">
 
 
-                {{-- Fee Collection --}}
+                            {{-- Fee Cycles --}}
 
-                @can('fee-collection.view')
+                            @can('fee-cycle.view')
 
-                    @if(Route::has('fee-collections.index'))
+                                <a
+                                    href="{{ route('fee-cycles.index') }}"
+                                    class="{{
+                                        request()->routeIs('fee-cycles.*')
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Fee Cycles
+                                </a>
 
-                        <a
-                            href="{{ route('fee-collections.index') }}"
-                            class="{{ request()->routeIs('fee-collections.*') ? 'active' : '' }}"
-                        >
+                            @endcan
+
+
+                            {{-- Fee Component Groups --}}
+
+                            @can('fee-component-group.view')
+
+                                <a
+                                    href="{{ route('fee-component-groups.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'fee-component-groups.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Fee Component Groups
+                                </a>
+
+                            @endcan
+
+
+                            {{-- Fee Components --}}
+
+                            @can('fee-head.view')
+
+                                <a
+                                    href="{{ route('fee-heads.index') }}"
+                                    class="{{
+                                        request()->routeIs('fee-heads.*')
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Fee Components
+                                </a>
+
+                            @endcan
+
+
+                            {{-- Misc Components --}}
+
+                            @can('misc-fee-component.view')
+
+                                <a
+                                    href="{{ route('misc-fee-components.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'misc-fee-components.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Misc. Components
+                                </a>
+
+                            @endcan
+
+
+                            {{-- Bank Master --}}
+
+                            @can('bank-master.view')
+
+                                <a
+                                    href="{{ route('bank-masters.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'bank-masters.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Banks Master
+                                </a>
+
+                            @endcan
+
+
+                            {{-- School Accounts --}}
+
+                            @can('school-account.view')
+
+                                <a
+                                    href="{{ route('school-accounts.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'school-accounts.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    School Accounts
+                                </a>
+
+                            @endcan
+
+
+                            {{-- Fee Templates --}}
+
+                            @can('fee-structure.view')
+
+                                <a
+                                    href="{{ route('fee-structures.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'fee-structures.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Fee Templates
+                                </a>
+
+                            @endcan
+
+
+                            {{-- Receipt Number Scheme --}}
+
+                            @can('fee-receipt-scheme.view')
+
+                                <a
+                                    href="{{ route('fee-receipt-schemes.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'fee-receipt-schemes.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Receipt No. Scheme
+                                </a>
+
+                            @endcan
+
+
+                            {{-- Late Fee Fine --}}
+
+                            @can('late-fee-fine.view')
+
+                                <a
+                                    href="{{ route('late-fee-fines.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'late-fee-fines.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Late Fee Fine
+                                </a>
+
+                            @endcan
+
+
+                            {{-- Concession Types --}}
+
+                            @can('concession-type.view')
+
+                                <a
+                                    href="{{ route('concession-types.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'concession-types.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Concession Types
+                                </a>
+
+                            @endcan
+
+                            {{-- Payment Modes --}}
+
+                            @can('payment-mode.view')
+
+                                <a
+                                    href="{{ route('payment-modes.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'payment-modes.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Payment Modes
+                                </a>
+
+                            @endcan
+
+
+                            {{-- Cheque Bounce Reasons --}}
+
+                            @can('cheque-bounce-reason.view')
+
+                                <a
+                                    href="{{ route('cheque-bounce-reasons.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'cheque-bounce-reasons.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Chq. Bounce Reasons
+                                </a>
+
+                            @endcan
+
+
+                            {{-- Compile Fee --}}
+
+                            @can('student-fee-assignment.bulk-create')
+
+                                <a
+                                    href="{{ route('fee-compile.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'fee-compile.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Compile Fee
+                                </a>
+
+                            @endcan
+
+
+                            {{-- Fee Compile Queue --}}
+
+                            @can('fee-compile-queue.view')
+
+                                <a
+                                    href="{{ route('fee-compile-queues.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'fee-compile-queues.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Fee Compile Queues
+                                </a>
+
+                            @endcan
+
+
+                        </div>
+
+                    </div>
+
+
+                    {{-- =================================================
+                        OPTIONAL ASSIGNMENTS
+                    ================================================== --}}
+
+                    <a
+                        data-bs-toggle="collapse"
+                        href="#feeOptionalMenu"
+                        role="button"
+                        aria-expanded="{{ $feeOptionalOpen ? 'true' : 'false' }}"
+                        aria-controls="feeOptionalMenu"
+                        class="{{ $feeOptionalOpen ? 'active' : '' }}"
+                    >
+
+                        <i class="bi bi-sliders me-2"></i>
+
+                        <span class="flex-grow-1">
+                            Optional Assignments
+                        </span>
+
+                        <i class="bi bi-chevron-down sidebar-arrow"></i>
+
+                    </a>
+
+
+                    <div
+                        class="collapse {{ $feeOptionalOpen ? 'show' : '' }}"
+                        id="feeOptionalMenu"
+                    >
+
+                        <div class="sidebar-submenu">
+
+
+                            {{-- Fee Assignments --}}
+
+                            @can('student-fee-assignment.view')
+
+                                <a
+                                    href="{{ route('student-fee-assignments.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'student-fee-assignments.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Fee Assignments
+                                </a>
+
+                            @endcan
+
+
+                            {{-- Optional Fee Assignment --}}
+
+                            @can('optional-fee-assignment.view')
+
+                                <a
+                                    href="{{ route('optional-fee-assignments.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'optional-fee-assignments.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Optional Fee Assignment
+                                </a>
+
+                            @endcan
+
+
+                            {{-- Concession Assignment --}}
+
+                            @can('concession-assignment.view')
+
+                                <a
+                                    href="{{ route('concession-assignments.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'concession-assignments.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Concession Assignment
+                                </a>
+
+                            @endcan
+
+
+                            {{-- Fee Waiver Assignment --}}
+
+                            @can('fee-waiver-assignment.view')
+
+                                <a
+                                    href="{{ route('fee-waiver-assignments.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'fee-waiver-assignments.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Fee Waiver Assignment
+                                </a>
+
+                            @endcan
+
+
+                            {{-- Fine Waiver Assignment --}}
+
+                            @can('fine-waiver-assignment.view')
+
+                                <a
+                                    href="{{ route('fine-waiver-assignments.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'fine-waiver-assignments.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Fine Waiver Assignment
+                                </a>
+
+                            @endcan
+
+
+                            {{-- Composite Concession --}}
+
+                            @can('composite-concession.view')
+
+                                <a
+                                    href="{{ route('composite-concessions.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'composite-concessions.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Composite Concession
+                                </a>
+
+                            @endcan
+
+
+                        </div>
+
+                    </div>
+
+
+                    {{-- =================================================
+                        FEE COLLECTION
+                    ================================================== --}}
+
+                    <a
+                        data-bs-toggle="collapse"
+                        href="#feeCollectionMenu"
+                        role="button"
+                        aria-expanded="{{ $feeCollectionOpen ? 'true' : 'false' }}"
+                        aria-controls="feeCollectionMenu"
+                        class="{{ $feeCollectionOpen ? 'active' : '' }}"
+                    >
+
+                        <i class="bi bi-currency-rupee me-2"></i>
+
+                        <span class="flex-grow-1">
                             Fee Collection
-                        </a>
+                        </span>
 
-                    @else
+                        <i class="bi bi-chevron-down sidebar-arrow"></i>
 
-                        <a href="javascript:void(0)" class="text-muted">
-                            Fee Collection
-                        </a>
-
-                    @endif
-
-                @endcan
+                    </a>
 
 
-                {{-- Due Fees --}}
+                    <div
+                        class="collapse {{ $feeCollectionOpen ? 'show' : '' }}"
+                        id="feeCollectionMenu"
+                    >
 
-                @can('fee-collection.view')
-
-                    @if(Route::has('fee-dues.index'))
-
-                        <a
-                            href="{{ route('fee-dues.index') }}"
-                            class="{{ request()->routeIs('fee-dues.*') ? 'active' : '' }}"
-                        >
-                            Due Fees
-                        </a>
-
-                    @else
-
-                        <a href="javascript:void(0)" class="text-muted">
-                            Due Fees
-                        </a>
-
-                    @endif
-
-                @endcan
+                        <div class="sidebar-submenu">
 
 
-                {{-- Fee Reports --}}
+                            {{-- Fee Receipts --}}
 
-                @can('fee-report.view')
+                            @can('fee-collection.view')
 
-                    @if(Route::has('fee-reports.index'))
+                                <a
+                                    href="{{ route('fee-receipts.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'fee-receipts.*',
+                                            'fee-collections.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Fee Receipts
+                                </a>
 
-                        <a
-                            href="{{ route('fee-reports.index') }}"
-                            class="{{ request()->routeIs('fee-reports.*') ? 'active' : '' }}"
-                        >
-                            Fee Reports
-                        </a>
-
-                    @else
-
-                        <a href="javascript:void(0)" class="text-muted">
-                            Fee Reports
-                        </a>
-
-                    @endif
-
-                @endcan
+                            @endcan
 
 
-            </div>
+                            {{-- Refund --}}
 
-        </div>
+                            @can('fee-refund.view')
 
-    @endcanany
+                                <a
+                                    href="{{ route('fee-refunds.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'fee-refunds.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Refund
+                                </a>
 
-        {{-- Accounts --}}
-
-        <a
-            data-bs-toggle="collapse"
-            href="#accountMenu">
-
-            <i class="bi bi-wallet2"></i>
-
-            <span class="flex-grow-1">
-                Accounts
-            </span>
-
-            <i class="bi bi-chevron-down"></i>
-
-        </a>
+                            @endcan
 
 
-        <div
-            class="collapse"
-            id="accountMenu">
+                            {{-- Cheque / DD --}}
 
-            <div class="sidebar-submenu">
+                            @can('cheque-dd.view')
 
-                <a href="#">
-                    Invoices
-                </a>
+                                <a
+                                    href="{{ route('cheque-dd-details.index') }}"
+                                    class="{{
+                                        request()->routeIs(
+                                            'cheque-dd-details.*'
+                                        )
+                                        ? 'active'
+                                        : ''
+                                    }}"
+                                >
+                                    Cheque/DD Detail
+                                </a>
 
-                <a href="#">
-                    Payments
-                </a>
+                            @endcan
 
-                <a href="#">
-                    Receipts
-                </a>
 
-                <a href="#">
-                    Reports
-                </a>
+                        </div>
+
+                    </div>
+
+
+                    {{-- =================================================
+                        INSTRUCTIONS
+                    ================================================== --}}
+
+                    <a href="#">
+
+                        <i class="bi bi-info-circle me-2"></i>
+
+                        Instructions
+
+                    </a>
+
+
+                </div>
 
             </div>
 
-        </div>
-
-
-        {{-- Examination --}}
-
-        <div class="menu-title">
-            Examination
-        </div>
-
-
-        <a
-            data-bs-toggle="collapse"
-            href="#examMenu">
-
-            <i class="bi bi-journal-check"></i>
-
-            <span class="flex-grow-1">
-                Examination
-            </span>
-
-            <i class="bi bi-chevron-down"></i>
-
-        </a>
-
-
-        <div
-            class="collapse"
-            id="examMenu">
-
-            <div class="sidebar-submenu">
-
-                <a href="#">
-                    Exam Setup
-                </a>
-
-                <a href="#">
-                    Marks Entry
-                </a>
-
-                <a href="#">
-                    Results
-                </a>
-
-                <a href="#">
-                    Report Cards
-                </a>
-
-            </div>
-
-        </div>
+        @endcanany
 
 
         {{-- Teaching --}}

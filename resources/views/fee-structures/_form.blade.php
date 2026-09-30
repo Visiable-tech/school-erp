@@ -1,7 +1,5 @@
 <div class="row g-3">
 
-    {{-- Academic Year --}}
-
     <div class="col-md-4">
 
         <label class="form-label">
@@ -9,11 +7,9 @@
             <span class="text-danger">*</span>
         </label>
 
-        <select
-            name="academic_year_id"
-            class="form-select @error('academic_year_id') is-invalid @enderror"
-            required
-        >
+        <select name="academic_year_id"
+                class="form-select"
+                required>
 
             <option value="">
                 Select Academic Year
@@ -23,19 +19,17 @@
 
                 <option
                     value="{{ $year->id }}"
-                    @selected(
-                        old(
-                            'academic_year_id',
-                            $feeStructure->academic_year_id
-                                ?? $currentAcademicYear?->id
-                                ?? ''
-                        ) == $year->id
-                    )
+                    {{ old(
+                        'academic_year_id',
+                        $feeStructure->academic_year_id ?? ''
+                    ) == $year->id
+                        ? 'selected'
+                        : '' }}
                 >
                     {{ $year->name }}
 
                     @if($year->is_current)
-                        (Current)
+                        - Current
                     @endif
                 </option>
 
@@ -43,16 +37,8 @@
 
         </select>
 
-        @error('academic_year_id')
-            <div class="invalid-feedback">
-                {{ $message }}
-            </div>
-        @enderror
-
     </div>
 
-
-    {{-- Class --}}
 
     <div class="col-md-4">
 
@@ -61,11 +47,9 @@
             <span class="text-danger">*</span>
         </label>
 
-        <select
-            name="school_class_id"
-            class="form-select @error('school_class_id') is-invalid @enderror"
-            required
-        >
+        <select name="school_class_id"
+                class="form-select"
+                required>
 
             <option value="">
                 Select Class
@@ -75,12 +59,12 @@
 
                 <option
                     value="{{ $class->id }}"
-                    @selected(
-                        old(
-                            'school_class_id',
-                            $feeStructure->school_class_id ?? ''
-                        ) == $class->id
-                    )
+                    {{ old(
+                        'school_class_id',
+                        $feeStructure->school_class_id ?? ''
+                    ) == $class->id
+                        ? 'selected'
+                        : '' }}
                 >
                     {{ $class->name }}
                 </option>
@@ -89,46 +73,28 @@
 
         </select>
 
-        @error('school_class_id')
-            <div class="invalid-feedback">
-                {{ $message }}
-            </div>
-        @enderror
-
     </div>
 
-
-    {{-- Structure Name --}}
 
     <div class="col-md-4">
 
         <label class="form-label">
-            Structure Name
+            Template Name
             <span class="text-danger">*</span>
         </label>
 
-        <input
-            type="text"
-            name="name"
-            class="form-control @error('name') is-invalid @enderror"
-            value="{{ old(
-                'name',
-                $feeStructure->name ?? ''
-            ) }}"
-            placeholder="Example: Class I Regular Fee"
-            required
-        >
-
-        @error('name')
-            <div class="invalid-feedback">
-                {{ $message }}
-            </div>
-        @enderror
+        <input type="text"
+               name="name"
+               class="form-control"
+               value="{{ old(
+                    'name',
+                    $feeStructure->name ?? ''
+               ) }}"
+               placeholder="Example: Class V Regular Fee"
+               required>
 
     </div>
 
-
-    {{-- Description --}}
 
     <div class="col-md-9">
 
@@ -136,19 +102,15 @@
             Description
         </label>
 
-        <textarea
-            name="description"
-            class="form-control"
-            rows="2"
-        >{{ old(
-            'description',
-            $feeStructure->description ?? ''
-        ) }}</textarea>
+        <textarea name="description"
+                  class="form-control"
+                  rows="2">{{ old(
+                    'description',
+                    $feeStructure->description ?? ''
+                  ) }}</textarea>
 
     </div>
 
-
-    {{-- Status --}}
 
     <div class="col-md-3">
 
@@ -156,34 +118,26 @@
             Status
         </label>
 
-        <input
-            type="hidden"
-            name="status"
-            value="0"
-        >
-
         <div class="form-check form-switch mt-2">
 
-            <input
-                type="checkbox"
-                name="status"
-                value="1"
-                id="status"
-                class="form-check-input"
-                @checked(
-                    old(
-                        'status',
-                        isset($feeStructure)
-                            ? $feeStructure->status
-                            : true
-                    )
-                )
-            >
+            <input type="hidden"
+                   name="status"
+                   value="0">
 
-            <label
-                for="status"
-                class="form-check-label"
-            >
+            <input type="checkbox"
+                   name="status"
+                   value="1"
+                   id="status"
+                   class="form-check-input"
+                   {{ old(
+                       'status',
+                       isset($feeStructure)
+                           ? $feeStructure->status
+                           : true
+                   ) ? 'checked' : '' }}>
+
+            <label class="form-check-label"
+                   for="status">
                 Active
             </label>
 
@@ -197,136 +151,107 @@
 <hr class="my-4">
 
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex justify-content-between
+            align-items-center mb-3">
 
     <div>
-
         <h5 class="mb-1">
-            Fee Items
+            Fee Components
         </h5>
 
         <small class="text-muted">
-            Select the applicable Fee Heads and enter their amounts.
+            Select components and enter amount
+            per fee cycle/installment.
         </small>
-
     </div>
-
-    <button
-        type="button"
-        class="btn btn-sm btn-outline-primary"
-        id="selectAllHeads"
-    >
-        Select All
-    </button>
 
 </div>
 
 
-@error('items')
-    <div class="alert alert-danger">
-        {{ $message }}
-    </div>
-@enderror
+@php
+
+    $existingItems = collect(
+        old(
+            'items',
+            isset($feeStructure)
+                ? $feeStructure->items
+                    ->map(function ($item) {
+                        return [
+                            'fee_head_id' =>
+                                $item->fee_head_id,
+
+                            'amount' =>
+                                $item->amount,
+                        ];
+                    })
+                    ->toArray()
+                : []
+        )
+    )->keyBy('fee_head_id');
+
+@endphp
 
 
 <div class="table-responsive">
 
-    <table class="table table-bordered align-middle">
+    <table class="table table-bordered
+                  align-middle">
 
         <thead class="table-light">
 
             <tr>
-
-                <th width="70">
-                    Use
+                <th width="60">
+                    Select
                 </th>
 
                 <th>
-                    Fee Head
+                    Component
                 </th>
 
-                <th width="150">
-                    Frequency
+                <th>
+                    Group
+                </th>
+
+                <th>
+                    Fee Cycle
                 </th>
 
                 <th width="180">
-                    Amount
+                    Amount / Cycle
                 </th>
-
             </tr>
 
         </thead>
 
+
         <tbody>
-
-            @php
-
-                /*
-                 * Convert existing/old rows into a map:
-                 * FeeHead ID => amount
-                 */
-
-                $selectedItems = [];
-
-                if (old('items')) {
-
-                    foreach (
-                        old('items', [])
-                        as $oldItem
-                    ) {
-
-                        if (
-                            !empty(
-                                $oldItem['fee_head_id']
-                            )
-                        ) {
-
-                            $selectedItems[
-                                $oldItem['fee_head_id']
-                            ] =
-                                $oldItem['amount'] ?? '';
-
-                        }
-                    }
-
-                } elseif (isset($feeStructure)) {
-
-                    foreach (
-                        $feeStructure->items
-                        as $existingItem
-                    ) {
-
-                        $selectedItems[
-                            $existingItem->fee_head_id
-                        ] =
-                            $existingItem->amount;
-
-                    }
-                }
-
-            @endphp
-
 
             @foreach($feeHeads as $feeHead)
 
                 @php
-                    $isSelected =
-                        array_key_exists(
-                            $feeHead->id,
-                            $selectedItems
+
+                    $selectedItem =
+                        $existingItems->get(
+                            $feeHead->id
                         );
+
+                    $selected =
+                        $selectedItem !== null;
+
                 @endphp
+
 
                 <tr>
 
                     <td class="text-center">
 
-                        <input
-                            type="checkbox"
-                            class="form-check-input fee-head-check"
-                            data-head="{{ $feeHead->id }}"
-                            @checked($isSelected)
-                        >
+                        <input type="checkbox"
+                               class="form-check-input
+                                      component-check"
+                               data-id="{{ $feeHead->id }}"
+                               {{ $selected
+                                    ? 'checked'
+                                    : '' }}>
 
                     </td>
 
@@ -339,16 +264,16 @@
 
                         @if($feeHead->code)
 
-                            <small class="text-muted ms-1">
-                                ({{ $feeHead->code }})
-                            </small>
+                            <div class="small text-muted">
+                                {{ $feeHead->code }}
+                            </div>
 
                         @endif
 
 
                         @if($feeHead->is_optional)
 
-                            <span class="badge bg-info text-dark ms-1">
+                            <span class="badge bg-info mt-1">
                                 Optional
                             </span>
 
@@ -359,26 +284,53 @@
 
                     <td>
 
-                        {{ ucwords(
-                            str_replace(
-                                '_',
-                                ' ',
-                                $feeHead->frequency
-                            )
-                        ) }}
+                        {{ optional(
+                            $feeHead->componentGroup
+                        )->name ?: '—' }}
 
                     </td>
 
 
                     <td>
 
-                        <input
-                            type="hidden"
-                            class="fee-head-id"
-                            data-head="{{ $feeHead->id }}"
-                            value="{{ $feeHead->id }}"
-                            {{ $isSelected ? '' : 'disabled' }}
-                        >
+                        @if($feeHead->feeCycle)
+
+                            <strong>
+                                {{ $feeHead
+                                    ->feeCycle
+                                    ->name }}
+                            </strong>
+
+                            <div class="small text-muted">
+
+                                {{ $feeHead
+                                    ->feeCycle
+                                    ->installments_count }}
+
+                                installment(s)
+
+                            </div>
+
+                        @else
+
+                            <span class="text-danger">
+                                Cycle not configured
+                            </span>
+
+                        @endif
+
+                    </td>
+
+
+                    <td>
+
+                        <input type="hidden"
+                               class="component-id"
+                               data-id="{{ $feeHead->id }}"
+                               value="{{ $feeHead->id }}"
+                               {{ !$selected
+                                    ? 'disabled'
+                                    : '' }}>
 
                         <div class="input-group">
 
@@ -386,16 +338,22 @@
                                 ₹
                             </span>
 
-                            <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                class="form-control fee-amount"
-                                data-head="{{ $feeHead->id }}"
-                                value="{{ $selectedItems[$feeHead->id] ?? '' }}"
-                                placeholder="0.00"
-                                {{ $isSelected ? '' : 'disabled' }}
-                            >
+                            <input type="number"
+                                   class="form-control
+                                          component-amount"
+                                   data-id="{{ $feeHead->id }}"
+                                   min="0"
+                                   step="0.01"
+
+                                   value="{{ $selected
+                                        ? $selectedItem['amount']
+                                        : '' }}"
+
+                                   placeholder="0.00"
+
+                                   {{ !$selected
+                                        ? 'disabled'
+                                        : '' }}>
 
                         </div>
 
@@ -412,14 +370,29 @@
 </div>
 
 
+<div class="alert alert-info">
+
+    <i class="bi bi-info-circle"></i>
+
+    Amount is entered per fee cycle.
+
+    For example, if Tuition Fee uses a
+    Monthly cycle and amount is ₹2,000,
+    the system will later generate
+    12 installments of ₹2,000.
+
+</div>
+
+
 <script>
+
 document.addEventListener(
     'DOMContentLoaded',
     function () {
 
         const checks =
             document.querySelectorAll(
-                '.fee-head-check'
+                '.component-check'
             );
 
 
@@ -427,63 +400,64 @@ document.addEventListener(
 
             let index = 0;
 
-            checks.forEach(function (check) {
+            document
+                .querySelectorAll(
+                    '.component-check'
+                )
+                .forEach(function (check) {
 
-                const headId =
-                    check.dataset.head;
+                    const id =
+                        check.dataset.id;
 
-                const hidden =
-                    document.querySelector(
-                        '.fee-head-id[data-head="' +
-                        headId +
-                        '"]'
-                    );
+                    const hidden =
+                        document.querySelector(
+                            '.component-id[data-id="' +
+                            id +
+                            '"]'
+                        );
 
-                const amount =
-                    document.querySelector(
-                        '.fee-amount[data-head="' +
-                        headId +
-                        '"]'
-                    );
+                    const amount =
+                        document.querySelector(
+                            '.component-amount[data-id="' +
+                            id +
+                            '"]'
+                        );
 
 
-                if (check.checked) {
+                    if (check.checked) {
 
-                    hidden.disabled = false;
-                    amount.disabled = false;
-                    amount.required = true;
+                        hidden.disabled = false;
+                        amount.disabled = false;
+                        amount.required = true;
 
-                    hidden.name =
-                        'items[' +
-                        index +
-                        '][fee_head_id]';
+                        hidden.name =
+                            'items[' +
+                            index +
+                            '][fee_head_id]';
 
-                    amount.name =
-                        'items[' +
-                        index +
-                        '][amount]';
+                        amount.name =
+                            'items[' +
+                            index +
+                            '][amount]';
 
-                    index++;
+                        index++;
 
-                }
-                else {
+                    } else {
 
-                    hidden.disabled = true;
-                    amount.disabled = true;
-                    amount.required = false;
+                        hidden.disabled = true;
+                        amount.disabled = true;
+                        amount.required = false;
 
-                    hidden.removeAttribute(
-                        'name'
-                    );
+                        hidden.removeAttribute(
+                            'name'
+                        );
 
-                    amount.removeAttribute(
-                        'name'
-                    );
+                        amount.removeAttribute(
+                            'name'
+                        );
+                    }
 
-                }
-
-            });
-
+                });
         }
 
 
@@ -497,44 +471,9 @@ document.addEventListener(
         });
 
 
-        document.getElementById(
-            'selectAllHeads'
-        ).addEventListener(
-            'click',
-            function () {
-
-                const allSelected =
-                    Array.from(checks)
-                        .every(
-                            checkbox =>
-                                checkbox.checked
-                        );
-
-
-                checks.forEach(
-                    function (checkbox) {
-
-                        checkbox.checked =
-                            !allSelected;
-
-                    }
-                );
-
-
-                this.textContent =
-                    allSelected
-                        ? 'Select All'
-                        : 'Clear All';
-
-
-                rebuildNames();
-
-            }
-        );
-
-
         rebuildNames();
 
     }
 );
+
 </script>

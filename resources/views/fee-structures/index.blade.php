@@ -174,185 +174,171 @@
 
                 <tr>
                     <th>#</th>
-                    <th>Structure</th>
+                    <th>Template</th>
                     <th>Academic Year</th>
                     <th>Class</th>
-                    <th>Fee Heads</th>
-                    <th>Total</th>
+                    <th>Components</th>
+                    <th>Cycle Value</th>
                     <th>Status</th>
-                    <th width="140">Action</th>
+                    <th width="120">Action</th>
                 </tr>
 
-            </thead>
+                </thead>
 
-
-            <tbody>
+                <tbody>
 
                 @forelse($feeStructures as $structure)
 
-                    <tr>
+                <tr>
 
-                        <td>
-                            {{ $feeStructures->firstItem() + $loop->index }}
-                        </td>
-
-
-                        <td>
-
-                            <div class="fw-semibold">
-                                {{ $structure->name }}
-                            </div>
-
-                        </td>
+                    <td>
+                        {{ $feeStructures->firstItem()
+                            + $loop->index }}
+                    </td>
 
 
-                        <td>
-                            {{ $structure->academicYear?->name }}
-                        </td>
+                    <td>
+
+                        <strong>
+                            {{ $structure->name }}
+                        </strong>
+
+                    </td>
 
 
-                        <td>
-                            {{ $structure->schoolClass?->name }}
-                        </td>
+                    <td>
+
+                        {{ optional(
+                            $structure->academicYear
+                        )->name ?: '—' }}
+
+                    </td>
 
 
-                        <td>
+                    <td>
 
-                            <span class="badge bg-secondary">
+                        {{ optional(
+                            $structure->schoolClass
+                        )->name ?: '—' }}
 
-                                {{ $structure->items->count() }}
+                    </td>
 
-                                Fee Heads
 
+                    <td>
+
+                        <span class="badge bg-primary">
+
+                            {{ $structure->items->count() }}
+                            Components
+
+                        </span>
+
+                    </td>
+
+
+                    <td>
+
+                        ₹{{ number_format(
+                            $structure
+                                ->items
+                                ->sum('amount'),
+                            2
+                        ) }}
+
+                        <div class="small text-muted">
+                            Sum of per-cycle amounts
+                        </div>
+
+                    </td>
+
+
+                    <td>
+
+                        @if($structure->status)
+
+                            <span class="badge bg-success">
+                                Active
                             </span>
 
-                        </td>
+                        @else
+
+                            <span class="badge bg-secondary">
+                                Inactive
+                            </span>
+
+                        @endif
+
+                    </td>
 
 
-                        <td class="fw-semibold">
+                    <td>
 
-                            ₹{{ number_format(
-                                $structure->items->sum('amount'),
-                                2
-                            ) }}
+                        <div class="d-flex gap-1">
 
-                        </td>
+                            @can('fee-structure.edit')
 
+                                <a href="{{ route(
+                                    'fee-structures.edit',
+                                    $structure
+                                ) }}"
+                                class="btn btn-sm
+                                        btn-outline-primary">
 
-                        <td>
+                                    <i class="bi bi-pencil"></i>
 
-                            @if($structure->status)
+                                </a>
 
-                                <span class="badge bg-success">
-                                    Active
-                                </span>
-
-                            @else
-
-                                <span class="badge bg-danger">
-                                    Inactive
-                                </span>
-
-                            @endif
-
-                        </td>
+                            @endcan
 
 
-                        <td>
+                            @can('fee-structure.delete')
 
-                            <div class="d-flex gap-1">
+                                <form method="POST"
+                                    action="{{ route(
+                                        'fee-structures.destroy',
+                                        $structure
+                                    ) }}"
+                                    onsubmit="return confirm(
+                                        'Delete this Fee Template?'
+                                    );">
 
-                                @can('fee-installment.view')
+                                    @csrf
+                                    @method('DELETE')
 
-                                    <a
-                                        href="{{ route(
-                                            'fee-installments.index',
-                                            $structure
-                                        ) }}"
-                                        class="btn btn-sm btn-outline-success"
-                                        title="Fee Schedule"
-                                    >
-                                        <i class="bi bi-calendar3"></i>
-                                    </a>
+                                    <button type="submit"
+                                            class="btn btn-sm
+                                                btn-outline-danger">
 
-                                @endcan
+                                        <i class="bi bi-trash"></i>
 
-                                @can('fee-structure.edit')
+                                    </button>
 
-                                    <a
-                                        href="{{ route(
-                                            'fee-structures.edit',
-                                            $structure
-                                        ) }}"
-                                        class="btn btn-sm btn-outline-primary"
-                                    >
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
+                                </form>
 
-                                @endcan
+                            @endcan
 
+                        </div>
 
-                                @can('fee-structure.delete')
+                    </td>
 
-                                    <form
-                                        method="POST"
-                                        action="{{ route(
-                                            'fee-structures.destroy',
-                                            $structure
-                                        ) }}"
-                                        onsubmit="
-                                            return confirm(
-                                                'Delete this Fee Structure?'
-                                            );
-                                        "
-                                    >
-
-                                        @csrf
-                                        @method('DELETE')
-
-                                        <button
-                                            type="submit"
-                                            class="btn btn-sm btn-outline-danger"
-                                        >
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-
-                                    </form>
-
-                                @endcan
-
-                            </div>
-
-                        </td>
-
-                    </tr>
+                </tr>
 
                 @empty
 
-                    <tr>
+                <tr>
 
-                        <td
-                            colspan="8"
-                            class="text-center py-5"
-                        >
+                    <td colspan="8"
+                        class="text-center text-muted py-5">
 
-                            <i class="bi bi-cash-coin fs-1 text-muted"></i>
+                        No Fee Templates found.
 
-                            <h5 class="mt-3">
-                                No Fee Structures Found
-                            </h5>
+                    </td>
 
-                            <div class="text-muted">
-                                Configure your first class-wise fee structure.
-                            </div>
-
-                        </td>
-
-                    </tr>
+                </tr>
 
                 @endforelse
 
-            </tbody>
+                </tbody>
 
         </table>
 

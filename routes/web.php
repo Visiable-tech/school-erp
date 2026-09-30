@@ -33,7 +33,40 @@ use App\Http\Controllers\StudentAttendanceController;
 use App\Http\Controllers\FeeHeadController;
 use App\Http\Controllers\FeeStructureController;
 use App\Http\Controllers\FeeInstallmentController;
+use App\Http\Controllers\StudentFeeAssignmentController;
+use App\Http\Controllers\FeeDashboardController;
+use App\Http\Controllers\FeeCycleController;
+use App\Http\Controllers\FeeComponentGroupController;
+use App\Http\Controllers\MiscFeeComponentController;
+use App\Http\Controllers\BankMasterController;
+use App\Http\Controllers\SchoolAccountController;
+use App\Http\Controllers\FeeReceiptSchemeController;
+use App\Http\Controllers\LateFeeFineRuleController;
+use App\Http\Controllers\ConcessionTypeController;
+use App\Http\Controllers\PaymentModeController;
+use App\Http\Controllers\ChequeBounceReasonController;
+use App\Http\Controllers\FeeCompileController;
+use App\Http\Controllers\FeeCompileQueueController;
+use App\Http\Controllers\OptionalFeeAssignmentController;
+use App\Http\Controllers\ConcessionAssignmentController;
+use App\Http\Controllers\FeeWaiverAssignmentController;
+use App\Http\Controllers\FineWaiverAssignmentController;
+use App\Http\Controllers\CompositeConcessionController;
+use App\Http\Controllers\FeeReceiptController;
+use App\Http\Controllers\FeeRefundController;
+use App\Http\Controllers\FeeChequeDdDetailController;
 
+use App\Http\Controllers\TcReasonController;
+use App\Http\Controllers\TcRemarkOptionController;
+use App\Http\Controllers\TcLastResultOptionController;
+use App\Http\Controllers\PromotionStatusController;
+use App\Http\Controllers\StudentManagementController;
+use App\Http\Controllers\StudentSuspensionController;
+use App\Http\Controllers\StudentDeregistrationController;
+use App\Http\Controllers\TransferCertificateController;
+use App\Http\Controllers\ManualTransferCertificateController;
+use App\Http\Controllers\TcRequestController;
+use App\Http\Controllers\StudentProfileModifyRequestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -868,7 +901,6 @@ Route::middleware(['auth'])->group(function () {
         ->name('admission-applications.reject');
 
 
-
     /*
     |--------------------------------------------------------------------------
     | APPLICATION -> STUDENT
@@ -907,7 +939,10 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('permission:student.view')
         ->name('students.index');
 
-
+    Route::get(
+        '/student-management/get-sections',
+        [StudentManagementController::class, 'getSections']
+    )->name('student-management.get-sections');    
 
     /*
     |--------------------------------------------------------------------------
@@ -1048,7 +1083,10 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('permission:student-document.delete')
         ->name('student-documents.destroy');
 
-
+    Route::get(
+        '/student-documents/get-sections',
+        [StudentDocumentController::class, 'getSections']
+    )->name('student-documents.get-sections');
 
     /*
     |--------------------------------------------------------------------------
@@ -1103,40 +1141,32 @@ Route::middleware(['auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | STUDENT PROMOTION
+    | Student Promotions / Repetitions
     |--------------------------------------------------------------------------
     */
 
     Route::get(
         '/student-promotions',
         [StudentPromotionController::class, 'index']
-    )
-        ->middleware('permission:student-promotion.view')
-        ->name('student-promotions.index');
+    )->name('student-promotions.index');
 
 
     Route::get(
-        '/student-promotions/sections',
+        '/student-promotions/get-sections',
         [StudentPromotionController::class, 'getSections']
-    )
-        ->middleware('permission:student-promotion.view')
-        ->name('student-promotions.sections');
+    )->name('student-promotions.get-sections');
 
 
     Route::get(
-        '/student-promotions/students',
+        '/student-promotions/get-students',
         [StudentPromotionController::class, 'getStudents']
-    )
-        ->middleware('permission:student-promotion.view')
-        ->name('student-promotions.students');
+    )->name('student-promotions.get-students');
 
 
     Route::post(
         '/student-promotions',
         [StudentPromotionController::class, 'store']
-    )
-        ->middleware('permission:student-promotion.create')
-        ->name('student-promotions.store');
+    )->name('student-promotions.store');
 
 
 
@@ -1190,6 +1220,16 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('permission:student-document.create')
         ->name('student-documents.students');    
 
+    Route::get(
+        '/students/editable-list',
+        [StudentController::class, 'editableList']
+    )->name('students.editable-list');
+
+    Route::put(
+        '/students/editable-list/{student}',
+        [StudentController::class, 'updateEditableList']
+    )->name('students.editable-list.update');    
+
     /*
     |--------------------------------------------------------------------------
     | STUDENT ATTENDANCE
@@ -1226,6 +1266,162 @@ Route::middleware(['auth'])->group(function () {
     )
         ->middleware('permission:student-attendance.create')
         ->name('student-attendance.store');   
+
+    Route::get(
+        '/students/update-images',
+        [StudentController::class, 'studentImages']
+    )->name('students.images');
+
+    Route::put(
+        '/students/update-images/{student}',
+        [StudentController::class, 'updateStudentImage']
+    )->name('students.images.update');   
+    
+    Route::get(
+        '/students/update-images',
+        [StudentController::class, 'studentImages']
+    )->name('students.images');
+
+
+    Route::post(
+        '/students/update-images/{student}',
+        [StudentController::class, 'uploadStudentImages']
+    )->name('students.images.upload');
+
+
+    Route::delete(
+        '/students/update-images/{student}/{imageType}',
+        [StudentController::class, 'deleteStudentImage']
+    )->name('students.images.delete');
+
+    Route::get(
+        '/student-management/assign-roll-no',
+        [StudentManagementController::class, 'assignRollNo']
+    )->name('student-management.assign-roll-no');
+
+    Route::post(
+        '/student-management/assign-roll-no',
+        [StudentManagementController::class, 'updateRollNo']
+    )->name('student-management.assign-roll-no.update');
+
+    Route::get(
+        '/student-management/section-change',
+        [StudentManagementController::class, 'sectionChange']
+    )->name('student-management.section-change');
+
+    Route::post(
+        '/student-management/section-change',
+        [StudentManagementController::class, 'updateSection']
+    )->name('student-management.section-change.update');
+
+    Route::get(
+        '/student-management/section-change-multiple',
+        [StudentManagementController::class, 'sectionChangeMultiple']
+    )->name('student-management.section-change-multiple');
+
+    Route::post(
+        '/student-management/section-change-multiple',
+        [StudentManagementController::class, 'updateSectionMultiple']
+    )->name('student-management.section-change-multiple.update');
+
+    Route::get(
+        '/student-management/class-change',
+        [StudentManagementController::class, 'classChange']
+    )->name('student-management.class-change');
+
+    Route::post(
+        '/student-management/class-change',
+        [StudentManagementController::class, 'updateClass']
+    )->name('student-management.class-change.update');
+
+    Route::get(
+        '/student-management/type-change',
+        [StudentManagementController::class, 'typeChange']
+    )->name('student-management.type-change');
+
+    Route::post(
+        '/student-management/type-change',
+        [StudentManagementController::class, 'updateType']
+    )->name('student-management.type-change.update');
+
+    Route::get(
+        '/student-management/suspension',
+        [StudentSuspensionController::class, 'index']
+    )->name('student-management.suspension');
+
+
+    Route::post(
+        '/student-management/suspension',
+        [StudentSuspensionController::class, 'store']
+    )->name('student-management.suspension.store');
+
+
+    Route::post(
+        '/student-management/suspension/{suspension}/revoke',
+        [StudentSuspensionController::class, 'revoke']
+    )->name('student-management.suspension.revoke');
+
+    Route::get(
+        '/student-management/de-registration',
+        [StudentDeregistrationController::class, 'index']
+    )->name('student-management.deregistration');
+
+
+    Route::post(
+        '/student-management/de-registration',
+        [StudentDeregistrationController::class, 'store']
+    )->name('student-management.deregistration.store');
+
+    Route::get(
+        '/student-management/transfer-certificate',
+        [TransferCertificateController::class, 'index']
+    )->name('student-management.transfer-certificate');
+
+
+    Route::post(
+        '/student-management/transfer-certificate',
+        [TransferCertificateController::class, 'store']
+    )->name('student-management.transfer-certificate.store');
+
+
+    Route::post(
+        '/student-management/transfer-certificate/{certificate}/issue',
+        [TransferCertificateController::class, 'issue']
+    )->name('student-management.transfer-certificate.issue');
+
+    Route::post(
+        '/student-management/transfer-certificate/{certificate}/cancel',
+        [TransferCertificateController::class, 'cancel']
+    )->name('student-management.transfer-certificate.cancel');
+
+    Route::get(
+        '/student-management/manual-transfer-certificate',
+        [ManualTransferCertificateController::class, 'index']
+    )->name('student-management.manual-transfer-certificate');
+
+
+    Route::get(
+        '/student-management/manual-transfer-certificate/create',
+        [ManualTransferCertificateController::class, 'create']
+    )->name('student-management.manual-transfer-certificate.create');
+
+
+    Route::post(
+        '/student-management/manual-transfer-certificate',
+        [ManualTransferCertificateController::class, 'store']
+    )->name('student-management.manual-transfer-certificate.store');
+
+
+    Route::post(
+        '/student-management/manual-transfer-certificate/{certificate}/issue',
+        [ManualTransferCertificateController::class, 'issue']
+    )->name('student-management.manual-transfer-certificate.issue');
+
+
+    Route::post(
+        '/student-management/manual-transfer-certificate/{certificate}/cancel',
+        [ManualTransferCertificateController::class, 'cancel']
+    )->name('student-management.manual-transfer-certificate.cancel');
         
     /*
     |--------------------------------------------------------------------------
@@ -1282,6 +1478,46 @@ Route::middleware(['auth'])->group(function () {
         ->whereNumber('feeHead')
         ->middleware('permission:fee-head.delete')
         ->name('fee-heads.destroy');    
+
+    Route::get(
+        '/student-management/tc-requests',
+        [TcRequestController::class, 'index']
+    )->name('student-management.tc-requests');
+
+    Route::post(
+        '/student-management/tc-requests',
+        [TcRequestController::class, 'store']
+    )->name('student-management.tc-requests.store');
+
+    Route::post(
+        '/student-management/tc-requests/{tcRequest}/approve',
+        [TcRequestController::class, 'approve']
+    )->name('student-management.tc-requests.approve');
+
+    Route::post(
+        '/student-management/tc-requests/{tcRequest}/reject',
+        [TcRequestController::class, 'reject']
+    )->name('student-management.tc-requests.reject');    
+
+    Route::get(
+        '/student-management/profile-modify-requests',
+        [StudentProfileModifyRequestController::class, 'index']
+    )->name('student-management.profile-modify-requests');
+
+    Route::post(
+        '/student-management/profile-modify-requests',
+        [StudentProfileModifyRequestController::class, 'store']
+    )->name('student-management.profile-modify-requests.store');
+
+    Route::post(
+        '/student-management/profile-modify-requests/{modifyRequest}/approve',
+        [StudentProfileModifyRequestController::class, 'approve']
+    )->name('student-management.profile-modify-requests.approve');
+
+    Route::post(
+        '/student-management/profile-modify-requests/{modifyRequest}/reject',
+        [StudentProfileModifyRequestController::class, 'reject']
+    )->name('student-management.profile-modify-requests.reject');
 
     /*
     |--------------------------------------------------------------------------
@@ -1416,4 +1652,1600 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('permission:fee-installment.delete')
         ->name('fee-installments.destroy');
 
+    /*
+    |--------------------------------------------------------------------------
+    | Student Fee Assignment
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/student-fee-assignments',
+        [StudentFeeAssignmentController::class, 'index']
+    )
+        ->middleware('permission:student-fee-assignment.view')
+        ->name('student-fee-assignments.index');
+
+
+    Route::get(
+        '/student-fee-assignments/create',
+        [StudentFeeAssignmentController::class, 'create']
+    )
+        ->middleware('permission:student-fee-assignment.create')
+        ->name('student-fee-assignments.create');
+
+
+    Route::get(
+        '/student-fee-assignments/sections',
+        [StudentFeeAssignmentController::class, 'getSections']
+    )
+        ->middleware('permission:student-fee-assignment.create')
+        ->name('student-fee-assignments.sections');
+
+
+    Route::get(
+        '/student-fee-assignments/students',
+        [StudentFeeAssignmentController::class, 'getStudents']
+    )
+        ->middleware('permission:student-fee-assignment.create')
+        ->name('student-fee-assignments.students');
+
+
+    Route::get(
+        '/student-fee-assignments/fee-structures',
+        [StudentFeeAssignmentController::class, 'getFeeStructures']
+    )
+        ->middleware('permission:student-fee-assignment.create')
+        ->name('student-fee-assignments.fee-structures');
+
+
+    Route::post(
+        '/student-fee-assignments/preview',
+        [StudentFeeAssignmentController::class, 'preview']
+    )
+        ->middleware('permission:student-fee-assignment.create')
+        ->name('student-fee-assignments.preview');
+
+
+    Route::post(
+        '/student-fee-assignments',
+        [StudentFeeAssignmentController::class, 'store']
+    )
+        ->middleware('permission:student-fee-assignment.create')
+        ->name('student-fee-assignments.store');
+
+
+    Route::get(
+        '/student-fee-assignments/{studentFeeAssignment}',
+        [StudentFeeAssignmentController::class, 'show']
+    )
+        ->whereNumber('studentFeeAssignment')
+        ->middleware('permission:student-fee-assignment.view')
+        ->name('student-fee-assignments.show');
+
+    Route::get(
+        '/student-fee-assignments/bulk',
+        [StudentFeeAssignmentController::class, 'bulkCreate']
+    )
+        ->middleware('permission:student-fee-assignment.bulk-create')
+        ->name('student-fee-assignments.bulk');
+
+
+    Route::post(
+        '/student-fee-assignments/bulk',
+        [StudentFeeAssignmentController::class, 'bulkStore']
+    )
+        ->middleware('permission:student-fee-assignment.bulk-create')
+        ->name('student-fee-assignments.bulk.store');    
+
+    Route::get(
+        '/fees',
+        [FeeDashboardController::class, 'index']
+    )
+        ->middleware('permission:fee-head.view')
+        ->name('fees.dashboard');    
+
+    Route::get(
+        '/fees/setup/cycles',
+        [FeeCycleController::class, 'index']
+    )
+        ->middleware('permission:fee-cycle.view')
+        ->name('fee-cycles.index');
+
+
+    Route::get(
+        '/fees/setup/cycles/create',
+        [FeeCycleController::class, 'create']
+    )
+        ->middleware('permission:fee-cycle.create')
+        ->name('fee-cycles.create');
+
+
+    Route::post(
+        '/fees/setup/cycles',
+        [FeeCycleController::class, 'store']
+    )
+        ->middleware('permission:fee-cycle.create')
+        ->name('fee-cycles.store');
+
+
+    Route::get(
+        '/fees/setup/cycles/{feeCycle}/edit',
+        [FeeCycleController::class, 'edit']
+    )
+        ->whereNumber('feeCycle')
+        ->middleware('permission:fee-cycle.edit')
+        ->name('fee-cycles.edit');
+
+
+    Route::put(
+        '/fees/setup/cycles/{feeCycle}',
+        [FeeCycleController::class, 'update']
+    )
+        ->whereNumber('feeCycle')
+        ->middleware('permission:fee-cycle.edit')
+        ->name('fee-cycles.update');
+
+
+    Route::delete(
+        '/fees/setup/cycles/{feeCycle}',
+        [FeeCycleController::class, 'destroy']
+    )
+        ->whereNumber('feeCycle')
+        ->middleware('permission:fee-cycle.delete')
+        ->name('fee-cycles.destroy');    
+
+    Route::get(
+        '/fees/setup/component-groups',
+        [FeeComponentGroupController::class, 'index']
+    )
+        ->middleware('permission:fee-component-group.view')
+        ->name('fee-component-groups.index');
+
+
+    Route::get(
+        '/fees/setup/component-groups/create',
+        [FeeComponentGroupController::class, 'create']
+    )
+        ->middleware('permission:fee-component-group.create')
+        ->name('fee-component-groups.create');
+
+
+    Route::post(
+        '/fees/setup/component-groups',
+        [FeeComponentGroupController::class, 'store']
+    )
+        ->middleware('permission:fee-component-group.create')
+        ->name('fee-component-groups.store');
+
+
+    Route::get(
+        '/fees/setup/component-groups/{feeComponentGroup}/edit',
+        [FeeComponentGroupController::class, 'edit']
+    )
+        ->whereNumber('feeComponentGroup')
+        ->middleware('permission:fee-component-group.edit')
+        ->name('fee-component-groups.edit');
+
+
+    Route::put(
+        '/fees/setup/component-groups/{feeComponentGroup}',
+        [FeeComponentGroupController::class, 'update']
+    )
+        ->whereNumber('feeComponentGroup')
+        ->middleware('permission:fee-component-group.edit')
+        ->name('fee-component-groups.update');
+
+
+    Route::delete(
+        '/fees/setup/component-groups/{feeComponentGroup}',
+        [FeeComponentGroupController::class, 'destroy']
+    )
+        ->whereNumber('feeComponentGroup')
+        ->middleware('permission:fee-component-group.delete')
+        ->name('fee-component-groups.destroy');    
+
+    Route::get(
+        '/fees/setup/misc-components',
+        [MiscFeeComponentController::class, 'index']
+    )
+        ->middleware(
+            'permission:misc-fee-component.view'
+        )
+        ->name('misc-fee-components.index');
+
+
+    Route::get(
+        '/fees/setup/misc-components/create',
+        [MiscFeeComponentController::class, 'create']
+    )
+        ->middleware(
+            'permission:misc-fee-component.create'
+        )
+        ->name('misc-fee-components.create');
+
+
+    Route::post(
+        '/fees/setup/misc-components',
+        [MiscFeeComponentController::class, 'store']
+    )
+        ->middleware(
+            'permission:misc-fee-component.create'
+        )
+        ->name('misc-fee-components.store');
+
+
+    Route::get(
+        '/fees/setup/misc-components/{miscFeeComponent}/edit',
+        [MiscFeeComponentController::class, 'edit']
+    )
+        ->whereNumber('miscFeeComponent')
+        ->middleware(
+            'permission:misc-fee-component.edit'
+        )
+        ->name('misc-fee-components.edit');
+
+
+    Route::put(
+        '/fees/setup/misc-components/{miscFeeComponent}',
+        [MiscFeeComponentController::class, 'update']
+    )
+        ->whereNumber('miscFeeComponent')
+        ->middleware(
+            'permission:misc-fee-component.edit'
+        )
+        ->name('misc-fee-components.update');
+
+
+    Route::delete(
+        '/fees/setup/misc-components/{miscFeeComponent}',
+        [MiscFeeComponentController::class, 'destroy']
+    )
+        ->whereNumber('miscFeeComponent')
+        ->middleware(
+            'permission:misc-fee-component.delete'
+        )
+        ->name('misc-fee-components.destroy');    
+
+    Route::get(
+        '/fees/setup/banks',
+        [BankMasterController::class, 'index']
+    )
+        ->middleware('permission:bank-master.view')
+        ->name('bank-masters.index');
+
+
+    Route::get(
+        '/fees/setup/banks/create',
+        [BankMasterController::class, 'create']
+    )
+        ->middleware('permission:bank-master.create')
+        ->name('bank-masters.create');
+
+
+    Route::post(
+        '/fees/setup/banks',
+        [BankMasterController::class, 'store']
+    )
+        ->middleware('permission:bank-master.create')
+        ->name('bank-masters.store');
+
+
+    Route::get(
+        '/fees/setup/banks/{bankMaster}/edit',
+        [BankMasterController::class, 'edit']
+    )
+        ->whereNumber('bankMaster')
+        ->middleware('permission:bank-master.edit')
+        ->name('bank-masters.edit');
+
+
+    Route::put(
+        '/fees/setup/banks/{bankMaster}',
+        [BankMasterController::class, 'update']
+    )
+        ->whereNumber('bankMaster')
+        ->middleware('permission:bank-master.edit')
+        ->name('bank-masters.update');
+
+
+    Route::delete(
+        '/fees/setup/banks/{bankMaster}',
+        [BankMasterController::class, 'destroy']
+    )
+        ->whereNumber('bankMaster')
+        ->middleware('permission:bank-master.delete')
+        ->name('bank-masters.destroy'); 
+        
+    Route::get(
+        '/fees/setup/school-accounts',
+        [SchoolAccountController::class, 'index']
+    )
+        ->middleware('permission:school-account.view')
+        ->name('school-accounts.index');
+
+
+    Route::get(
+        '/fees/setup/school-accounts/create',
+        [SchoolAccountController::class, 'create']
+    )
+        ->middleware('permission:school-account.create')
+        ->name('school-accounts.create');
+
+
+    Route::post(
+        '/fees/setup/school-accounts',
+        [SchoolAccountController::class, 'store']
+    )
+        ->middleware('permission:school-account.create')
+        ->name('school-accounts.store');
+
+
+    Route::get(
+        '/fees/setup/school-accounts/{schoolAccount}/edit',
+        [SchoolAccountController::class, 'edit']
+    )
+        ->whereNumber('schoolAccount')
+        ->middleware('permission:school-account.edit')
+        ->name('school-accounts.edit');
+
+
+    Route::put(
+        '/fees/setup/school-accounts/{schoolAccount}',
+        [SchoolAccountController::class, 'update']
+    )
+        ->whereNumber('schoolAccount')
+        ->middleware('permission:school-account.edit')
+        ->name('school-accounts.update');
+
+
+    Route::delete(
+        '/fees/setup/school-accounts/{schoolAccount}',
+        [SchoolAccountController::class, 'destroy']
+    )
+        ->whereNumber('schoolAccount')
+        ->middleware('permission:school-account.delete')
+        ->name('school-accounts.destroy');    
+
+    Route::get(
+        '/fees/setup/receipt-schemes',
+        [FeeReceiptSchemeController::class, 'index']
+    )
+        ->middleware('permission:fee-receipt-scheme.view')
+        ->name('fee-receipt-schemes.index');
+
+
+    Route::get(
+        '/fees/setup/receipt-schemes/create',
+        [FeeReceiptSchemeController::class, 'create']
+    )
+        ->middleware('permission:fee-receipt-scheme.create')
+        ->name('fee-receipt-schemes.create');
+
+
+    Route::post(
+        '/fees/setup/receipt-schemes',
+        [FeeReceiptSchemeController::class, 'store']
+    )
+        ->middleware('permission:fee-receipt-scheme.create')
+        ->name('fee-receipt-schemes.store');
+
+
+    Route::get(
+        '/fees/setup/receipt-schemes/{feeReceiptScheme}/edit',
+        [FeeReceiptSchemeController::class, 'edit']
+    )
+        ->whereNumber('feeReceiptScheme')
+        ->middleware('permission:fee-receipt-scheme.edit')
+        ->name('fee-receipt-schemes.edit');
+
+
+    Route::put(
+        '/fees/setup/receipt-schemes/{feeReceiptScheme}',
+        [FeeReceiptSchemeController::class, 'update']
+    )
+        ->whereNumber('feeReceiptScheme')
+        ->middleware('permission:fee-receipt-scheme.edit')
+        ->name('fee-receipt-schemes.update');
+
+
+    Route::delete(
+        '/fees/setup/receipt-schemes/{feeReceiptScheme}',
+        [FeeReceiptSchemeController::class, 'destroy']
+    )
+        ->whereNumber('feeReceiptScheme')
+        ->middleware('permission:fee-receipt-scheme.delete')
+        ->name('fee-receipt-schemes.destroy');
+
+    Route::get(
+        '/fees/setup/late-fee-fines',
+        [LateFeeFineRuleController::class, 'index']
+    )
+        ->middleware('permission:late-fee-fine.view')
+        ->name('late-fee-fines.index');
+
+
+    Route::get(
+        '/fees/setup/late-fee-fines/create',
+        [LateFeeFineRuleController::class, 'create']
+    )
+        ->middleware('permission:late-fee-fine.create')
+        ->name('late-fee-fines.create');
+
+
+    Route::post(
+        '/fees/setup/late-fee-fines',
+        [LateFeeFineRuleController::class, 'store']
+    )
+        ->middleware('permission:late-fee-fine.create')
+        ->name('late-fee-fines.store');
+
+
+    Route::get(
+        '/fees/setup/late-fee-fines/{lateFeeFine}/edit',
+        [LateFeeFineRuleController::class, 'edit']
+    )
+        ->whereNumber('lateFeeFine')
+        ->middleware('permission:late-fee-fine.edit')
+        ->name('late-fee-fines.edit');
+
+
+    Route::put(
+        '/fees/setup/late-fee-fines/{lateFeeFine}',
+        [LateFeeFineRuleController::class, 'update']
+    )
+        ->whereNumber('lateFeeFine')
+        ->middleware('permission:late-fee-fine.edit')
+        ->name('late-fee-fines.update');
+
+
+    Route::delete(
+        '/fees/setup/late-fee-fines/{lateFeeFine}',
+        [LateFeeFineRuleController::class, 'destroy']
+    )
+        ->whereNumber('lateFeeFine')
+        ->middleware('permission:late-fee-fine.delete')
+        ->name('late-fee-fines.destroy');
+        
+    Route::get(
+        '/fees/setup/concession-types',
+        [ConcessionTypeController::class, 'index']
+    )
+        ->middleware(
+            'permission:concession-type.view'
+        )
+        ->name('concession-types.index');
+
+
+    Route::get(
+        '/fees/setup/concession-types/create',
+        [ConcessionTypeController::class, 'create']
+    )
+        ->middleware(
+            'permission:concession-type.create'
+        )
+        ->name('concession-types.create');
+
+
+    Route::post(
+        '/fees/setup/concession-types',
+        [ConcessionTypeController::class, 'store']
+    )
+        ->middleware(
+            'permission:concession-type.create'
+        )
+        ->name('concession-types.store');
+
+
+    Route::get(
+        '/fees/setup/concession-types/{concessionType}/edit',
+        [ConcessionTypeController::class, 'edit']
+    )
+        ->whereNumber('concessionType')
+        ->middleware(
+            'permission:concession-type.edit'
+        )
+        ->name('concession-types.edit');
+
+
+    Route::put(
+        '/fees/setup/concession-types/{concessionType}',
+        [ConcessionTypeController::class, 'update']
+    )
+        ->whereNumber('concessionType')
+        ->middleware(
+            'permission:concession-type.edit'
+        )
+        ->name('concession-types.update');
+
+
+    Route::delete(
+        '/fees/setup/concession-types/{concessionType}',
+        [ConcessionTypeController::class, 'destroy']
+    )
+        ->whereNumber('concessionType')
+        ->middleware(
+            'permission:concession-type.delete'
+        )
+        ->name('concession-types.destroy');
+
+    Route::get(
+        '/fees/setup/payment-modes',
+        [PaymentModeController::class, 'index']
+    )
+        ->middleware('permission:payment-mode.view')
+        ->name('payment-modes.index');
+
+
+    Route::get(
+        '/fees/setup/payment-modes/create',
+        [PaymentModeController::class, 'create']
+    )
+        ->middleware('permission:payment-mode.create')
+        ->name('payment-modes.create');
+
+
+    Route::post(
+        '/fees/setup/payment-modes',
+        [PaymentModeController::class, 'store']
+    )
+        ->middleware('permission:payment-mode.create')
+        ->name('payment-modes.store');
+
+
+    Route::get(
+        '/fees/setup/payment-modes/{paymentMode}/edit',
+        [PaymentModeController::class, 'edit']
+    )
+        ->whereNumber('paymentMode')
+        ->middleware('permission:payment-mode.edit')
+        ->name('payment-modes.edit');
+
+
+    Route::put(
+        '/fees/setup/payment-modes/{paymentMode}',
+        [PaymentModeController::class, 'update']
+    )
+        ->whereNumber('paymentMode')
+        ->middleware('permission:payment-mode.edit')
+        ->name('payment-modes.update');
+
+
+    Route::delete(
+        '/fees/setup/payment-modes/{paymentMode}',
+        [PaymentModeController::class, 'destroy']
+    )
+        ->whereNumber('paymentMode')
+        ->middleware('permission:payment-mode.delete')
+        ->name('payment-modes.destroy');    
+
+    Route::get(
+        '/fees/setup/cheque-bounce-reasons',
+        [ChequeBounceReasonController::class, 'index']
+    )
+        ->middleware(
+            'permission:cheque-bounce-reason.view'
+        )
+        ->name(
+            'cheque-bounce-reasons.index'
+        );
+
+
+    Route::get(
+        '/fees/setup/cheque-bounce-reasons/create',
+        [ChequeBounceReasonController::class, 'create']
+    )
+        ->middleware(
+            'permission:cheque-bounce-reason.create'
+        )
+        ->name(
+            'cheque-bounce-reasons.create'
+        );
+
+
+    Route::post(
+        '/fees/setup/cheque-bounce-reasons',
+        [ChequeBounceReasonController::class, 'store']
+    )
+        ->middleware(
+            'permission:cheque-bounce-reason.create'
+        )
+        ->name(
+            'cheque-bounce-reasons.store'
+        );
+
+
+    Route::get(
+        '/fees/setup/cheque-bounce-reasons/{chequeBounceReason}/edit',
+        [ChequeBounceReasonController::class, 'edit']
+    )
+        ->whereNumber('chequeBounceReason')
+        ->middleware(
+            'permission:cheque-bounce-reason.edit'
+        )
+        ->name(
+            'cheque-bounce-reasons.edit'
+        );
+
+
+    Route::put(
+        '/fees/setup/cheque-bounce-reasons/{chequeBounceReason}',
+        [ChequeBounceReasonController::class, 'update']
+    )
+        ->whereNumber('chequeBounceReason')
+        ->middleware(
+            'permission:cheque-bounce-reason.edit'
+        )
+        ->name(
+            'cheque-bounce-reasons.update'
+        );
+
+
+    Route::delete(
+        '/fees/setup/cheque-bounce-reasons/{chequeBounceReason}',
+        [ChequeBounceReasonController::class, 'destroy']
+    )
+        ->whereNumber('chequeBounceReason')
+        ->middleware(
+            'permission:cheque-bounce-reason.delete'
+        )
+        ->name(
+            'cheque-bounce-reasons.destroy'
+        );    
+
+    Route::get(
+        '/fees/compile',
+        [FeeCompileController::class, 'index']
+    )
+    ->middleware(
+        'permission:student-fee-assignment.bulk-create'
+    )
+    ->name('fee-compile.index');
+
+
+    Route::get(
+        '/fees/compile/sections',
+        [FeeCompileController::class, 'sections']
+    )
+    ->middleware(
+        'permission:student-fee-assignment.bulk-create'
+    )
+    ->name('fee-compile.sections');
+
+
+    Route::get(
+        '/fees/compile/templates',
+        [FeeCompileController::class, 'templates']
+    )
+    ->middleware(
+        'permission:student-fee-assignment.bulk-create'
+    )
+    ->name('fee-compile.templates');
+
+
+    Route::post(
+        '/fees/compile/preview',
+        [FeeCompileController::class, 'preview']
+    )
+    ->middleware(
+        'permission:student-fee-assignment.bulk-create'
+    )
+    ->name('fee-compile.preview');
+
+
+    Route::post(
+        '/fees/compile/process',
+        [FeeCompileController::class, 'compile']
+    )
+    ->middleware(
+        'permission:student-fee-assignment.bulk-create'
+    )
+    ->name('fee-compile.process');    
+    
+    
+    Route::get(
+        '/fees/compile-queues',
+        [FeeCompileQueueController::class, 'index']
+    )
+    ->middleware(
+        'permission:fee-compile-queue.view'
+    )
+    ->name(
+        'fee-compile-queues.index'
+    );
+
+
+    Route::get(
+        '/fees/compile-queues/{feeCompileQueue}',
+        [FeeCompileQueueController::class, 'show']
+    )
+    ->whereNumber('feeCompileQueue')
+    ->middleware(
+        'permission:fee-compile-queue.view'
+    )
+    ->name(
+        'fee-compile-queues.show'
+    );
+
+
+    Route::post(
+        '/fees/compile-queues/{feeCompileQueue}/cancel',
+        [FeeCompileQueueController::class, 'cancel']
+    )
+    ->whereNumber('feeCompileQueue')
+    ->middleware(
+        'permission:fee-compile-queue.cancel'
+    )
+    ->name(
+        'fee-compile-queues.cancel'
+    );
+
+
+    Route::post(
+        '/fees/compile-queues/{feeCompileQueue}/retry',
+        [FeeCompileQueueController::class, 'retry']
+    )
+    ->whereNumber('feeCompileQueue')
+    ->middleware(
+        'permission:fee-compile-queue.retry'
+    )
+    ->name(
+        'fee-compile-queues.retry'
+    );
+
+    Route::get(
+        '/fees/optional-assignments',
+        [OptionalFeeAssignmentController::class, 'index']
+    )
+    ->middleware(
+        'permission:optional-fee-assignment.view'
+    )
+    ->name(
+        'optional-fee-assignments.index'
+    );
+
+
+    Route::get(
+        '/fees/optional-assignments/create',
+        [OptionalFeeAssignmentController::class, 'create']
+    )
+    ->middleware(
+        'permission:optional-fee-assignment.create'
+    )
+    ->name(
+        'optional-fee-assignments.create'
+    );
+
+
+    Route::get(
+        '/fees/optional-assignments/students',
+        [OptionalFeeAssignmentController::class, 'students']
+    )
+    ->middleware(
+        'permission:optional-fee-assignment.create'
+    )
+    ->name(
+        'optional-fee-assignments.students'
+    );
+
+
+    Route::post(
+        '/fees/optional-assignments',
+        [OptionalFeeAssignmentController::class, 'store']
+    )
+    ->middleware(
+        'permission:optional-fee-assignment.create'
+    )
+    ->name(
+        'optional-fee-assignments.store'
+    );
+
+
+    Route::delete(
+        '/fees/optional-assignments/{optionalFeeAssignment}',
+        [OptionalFeeAssignmentController::class, 'destroy']
+    )
+    ->whereNumber('optionalFeeAssignment')
+    ->middleware(
+        'permission:optional-fee-assignment.delete'
+    )
+    ->name(
+        'optional-fee-assignments.destroy'
+    );
+
+    // =====================================================
+    // CONCESSION ASSIGNMENTS
+    // =====================================================
+
+    Route::get(
+        '/fees/concession-assignments',
+        [ConcessionAssignmentController::class, 'index']
+    )
+    ->middleware(['auth', 'permission:concession-assignment.view'])
+    ->name('concession-assignments.index');
+
+
+    Route::get(
+        '/fees/concession-assignments/create',
+        [ConcessionAssignmentController::class, 'create']
+    )
+    ->middleware(['auth', 'permission:concession-assignment.create'])
+    ->name('concession-assignments.create');
+
+
+    Route::post(
+        '/fees/concession-assignments',
+        [ConcessionAssignmentController::class, 'store']
+    )
+    ->middleware(['auth', 'permission:concession-assignment.create'])
+    ->name('concession-assignments.store');
+
+
+    // AJAX - Student Search
+    Route::get(
+        '/fees/concession-assignments/students',
+        [ConcessionAssignmentController::class, 'students']
+    )
+    ->middleware(['auth', 'permission:concession-assignment.create'])
+    ->name('concession-assignments.students');
+
+
+    // AJAX - Student Fee Dues
+    Route::get(
+        '/fees/concession-assignments/dues',
+        [ConcessionAssignmentController::class, 'dues']
+    )
+    ->middleware(['auth', 'permission:concession-assignment.create'])
+    ->name('concession-assignments.dues');
+
+
+    // Approve
+    Route::post(
+        '/fees/concession-assignments/{concessionAssignment}/approve',
+        [ConcessionAssignmentController::class, 'approve']
+    )
+    ->middleware(['auth', 'permission:concession-assignment.approve'])
+    ->name('concession-assignments.approve');
+
+
+    // Reject
+    Route::post(
+        '/fees/concession-assignments/{concessionAssignment}/reject',
+        [ConcessionAssignmentController::class, 'reject']
+    )
+    ->middleware(['auth', 'permission:concession-assignment.approve'])
+    ->name('concession-assignments.reject');
+
+
+    // Delete / Reverse
+    Route::delete(
+        '/fees/concession-assignments/{concessionAssignment}',
+        [ConcessionAssignmentController::class, 'destroy']
+    )
+    ->middleware(['auth', 'permission:concession-assignment.delete'])
+    ->name('concession-assignments.destroy');
+
+    // =====================================================
+    // FEE WAIVER ASSIGNMENTS
+    // =====================================================
+
+    Route::get(
+        '/fees/waiver-assignments',
+        [FeeWaiverAssignmentController::class, 'index']
+    )
+    ->middleware([
+        'auth',
+        'permission:fee-waiver-assignment.view'
+    ])
+    ->name('fee-waiver-assignments.index');
+
+
+    Route::get(
+        '/fees/waiver-assignments/create',
+        [FeeWaiverAssignmentController::class, 'create']
+    )
+    ->middleware([
+        'auth',
+        'permission:fee-waiver-assignment.create'
+    ])
+    ->name('fee-waiver-assignments.create');
+
+
+    Route::get(
+        '/fees/waiver-assignments/students',
+        [FeeWaiverAssignmentController::class, 'students']
+    )
+    ->middleware([
+        'auth',
+        'permission:fee-waiver-assignment.create'
+    ])
+    ->name('fee-waiver-assignments.students');
+
+
+    Route::get(
+        '/fees/waiver-assignments/dues',
+        [FeeWaiverAssignmentController::class, 'dues']
+    )
+    ->middleware([
+        'auth',
+        'permission:fee-waiver-assignment.create'
+    ])
+    ->name('fee-waiver-assignments.dues');
+
+
+    Route::post(
+        '/fees/waiver-assignments',
+        [FeeWaiverAssignmentController::class, 'store']
+    )
+    ->middleware([
+        'auth',
+        'permission:fee-waiver-assignment.create'
+    ])
+    ->name('fee-waiver-assignments.store');
+
+
+    Route::post(
+        '/fees/waiver-assignments/{feeWaiverAssignment}/approve',
+        [FeeWaiverAssignmentController::class, 'approve']
+    )
+    ->middleware([
+        'auth',
+        'permission:fee-waiver-assignment.approve'
+    ])
+    ->name('fee-waiver-assignments.approve');
+
+
+    Route::post(
+        '/fees/waiver-assignments/{feeWaiverAssignment}/reject',
+        [FeeWaiverAssignmentController::class, 'reject']
+    )
+    ->middleware([
+        'auth',
+        'permission:fee-waiver-assignment.approve'
+    ])
+    ->name('fee-waiver-assignments.reject');
+
+
+    Route::delete(
+        '/fees/waiver-assignments/{feeWaiverAssignment}',
+        [FeeWaiverAssignmentController::class, 'destroy']
+    )
+    ->middleware([
+        'auth',
+        'permission:fee-waiver-assignment.delete'
+    ])
+    ->name('fee-waiver-assignments.destroy');
+
+    // =====================================================
+    // FINE WAIVER ASSIGNMENTS
+    // =====================================================
+
+    Route::get(
+        '/fees/fine-waiver-assignments',
+        [FineWaiverAssignmentController::class, 'index']
+    )
+    ->middleware([
+        'auth',
+        'permission:fine-waiver-assignment.view'
+    ])
+    ->name('fine-waiver-assignments.index');
+
+
+    Route::get(
+        '/fees/fine-waiver-assignments/create',
+        [FineWaiverAssignmentController::class, 'create']
+    )
+    ->middleware([
+        'auth',
+        'permission:fine-waiver-assignment.create'
+    ])
+    ->name('fine-waiver-assignments.create');
+
+
+    Route::get(
+        '/fees/fine-waiver-assignments/students',
+        [FineWaiverAssignmentController::class, 'students']
+    )
+    ->middleware([
+        'auth',
+        'permission:fine-waiver-assignment.create'
+    ])
+    ->name('fine-waiver-assignments.students');
+
+
+    Route::get(
+        '/fees/fine-waiver-assignments/dues',
+        [FineWaiverAssignmentController::class, 'dues']
+    )
+    ->middleware([
+        'auth',
+        'permission:fine-waiver-assignment.create'
+    ])
+    ->name('fine-waiver-assignments.dues');
+
+
+    Route::post(
+        '/fees/fine-waiver-assignments',
+        [FineWaiverAssignmentController::class, 'store']
+    )
+    ->middleware([
+        'auth',
+        'permission:fine-waiver-assignment.create'
+    ])
+    ->name('fine-waiver-assignments.store');
+
+
+    Route::post(
+        '/fees/fine-waiver-assignments/{fineWaiverAssignment}/approve',
+        [FineWaiverAssignmentController::class, 'approve']
+    )
+    ->middleware([
+        'auth',
+        'permission:fine-waiver-assignment.approve'
+    ])
+    ->name('fine-waiver-assignments.approve');
+
+
+    Route::post(
+        '/fees/fine-waiver-assignments/{fineWaiverAssignment}/reject',
+        [FineWaiverAssignmentController::class, 'reject']
+    )
+    ->middleware([
+        'auth',
+        'permission:fine-waiver-assignment.approve'
+    ])
+    ->name('fine-waiver-assignments.reject');
+
+
+    Route::delete(
+        '/fees/fine-waiver-assignments/{fineWaiverAssignment}',
+        [FineWaiverAssignmentController::class, 'destroy']
+    )
+    ->middleware([
+        'auth',
+        'permission:fine-waiver-assignment.delete'
+    ])
+    ->name('fine-waiver-assignments.destroy');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Composite Concession
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/fees/composite-concessions',
+        [CompositeConcessionController::class, 'index']
+    )
+    ->middleware('permission:composite-concession.view')
+    ->name('composite-concessions.index');
+
+
+    Route::get(
+        '/fees/composite-concessions/create',
+        [CompositeConcessionController::class, 'create']
+    )
+    ->middleware('permission:composite-concession.create')
+    ->name('composite-concessions.create');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | AJAX
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/fees/composite-concessions/students',
+        [CompositeConcessionController::class, 'students']
+    )
+    ->middleware('permission:composite-concession.create')
+    ->name('composite-concessions.students');
+
+
+    Route::get(
+        '/fees/composite-concessions/dues',
+        [CompositeConcessionController::class, 'dues']
+    )
+    ->middleware('permission:composite-concession.create')
+    ->name('composite-concessions.dues');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Store
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post(
+        '/fees/composite-concessions',
+        [CompositeConcessionController::class, 'store']
+    )
+    ->middleware('permission:composite-concession.create')
+    ->name('composite-concessions.store');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Approval
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post(
+        '/fees/composite-concessions/{compositeConcession}/approve',
+        [CompositeConcessionController::class, 'approve']
+    )
+    ->middleware('permission:composite-concession.approve')
+    ->name('composite-concessions.approve');
+
+
+    Route::post(
+        '/fees/composite-concessions/{compositeConcession}/reject',
+        [CompositeConcessionController::class, 'reject']
+    )
+    ->middleware('permission:composite-concession.approve')
+    ->name('composite-concessions.reject');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Delete / Reverse
+    |--------------------------------------------------------------------------
+    */
+
+    Route::delete(
+        '/fees/composite-concessions/{compositeConcession}',
+        [CompositeConcessionController::class, 'destroy']
+    )
+    ->middleware('permission:composite-concession.delete')
+    ->name('composite-concessions.destroy');
+
+    Route::get(
+        '/fees/receipts',
+        [FeeReceiptController::class, 'index']
+    )
+    ->middleware('permission:fee-collection.view')
+    ->name('fee-receipts.index');
+
+
+    Route::get(
+        '/fees/receipts/create',
+        [FeeReceiptController::class, 'create']
+    )
+    ->middleware('permission:fee-collection.create')
+    ->name('fee-receipts.create');
+
+
+    Route::get(
+        '/fees/receipts/students',
+        [FeeReceiptController::class, 'students']
+    )
+    ->middleware('permission:fee-collection.create')
+    ->name('fee-receipts.students');
+
+
+    Route::get(
+        '/fees/receipts/dues',
+        [FeeReceiptController::class, 'dues']
+    )
+    ->middleware('permission:fee-collection.create')
+    ->name('fee-receipts.dues');
+
+
+    Route::post(
+        '/fees/receipts',
+        [FeeReceiptController::class, 'store']
+    )
+    ->middleware('permission:fee-collection.create')
+    ->name('fee-receipts.store');
+
+
+    Route::get(
+        '/fees/receipts/{feeReceipt}',
+        [FeeReceiptController::class, 'show']
+    )
+    ->middleware('permission:fee-collection.view')
+    ->name('fee-receipts.show');
+
+
+    Route::get(
+        '/fees/receipts/{feeReceipt}/print',
+        [FeeReceiptController::class, 'print']
+    )
+    ->middleware('permission:fee-collection.receipt')
+    ->name('fee-receipts.print');
+
+
+    Route::post(
+        '/fees/receipts/{feeReceipt}/cancel',
+        [FeeReceiptController::class, 'cancel']
+    )
+    ->middleware('permission:fee-collection.cancel')
+    ->name('fee-receipts.cancel');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fee Refund
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/fees/refunds', [FeeRefundController::class, 'index'])
+        ->middleware('permission:fee-refund.view')
+        ->name('fee-refunds.index');
+
+    Route::get('/fees/refunds/create', [FeeRefundController::class, 'create'])
+        ->middleware('permission:fee-refund.create')
+        ->name('fee-refunds.create');
+
+    /*
+    |--------------------------------------------------------------------------
+    | AJAX
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/fees/refunds/students', [FeeRefundController::class, 'students'])
+        ->middleware('permission:fee-refund.create')
+        ->name('fee-refunds.students');
+
+    Route::get('/fees/refunds/receipts', [FeeRefundController::class, 'receipts'])
+        ->middleware('permission:fee-refund.create')
+        ->name('fee-refunds.receipts');
+
+    Route::get('/fees/refunds/items', [FeeRefundController::class, 'items'])
+        ->middleware('permission:fee-refund.create')
+        ->name('fee-refunds.items');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Store
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post('/fees/refunds', [FeeRefundController::class, 'store'])
+        ->middleware('permission:fee-refund.create')
+        ->name('fee-refunds.store');
+
+    /*
+    |--------------------------------------------------------------------------
+    | View / Print / Cancel
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/fees/refunds/{feeRefund}', [FeeRefundController::class, 'show'])
+        ->middleware('permission:fee-refund.view')
+        ->name('fee-refunds.show');
+
+    Route::get('/fees/refunds/{feeRefund}/print', [FeeRefundController::class, 'print'])
+        ->middleware('permission:fee-refund.receipt')
+        ->name('fee-refunds.print');
+
+    Route::post('/fees/refunds/{feeRefund}/cancel', [FeeRefundController::class, 'cancel'])
+        ->middleware('permission:fee-refund.cancel')
+        ->name('fee-refunds.cancel');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fee Collection - Cheque / DD Details
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/fees/cheque-dd-details',
+        [FeeChequeDdDetailController::class, 'index']
+    )
+    ->middleware(['auth', 'permission:cheque-dd.view'])
+    ->name('cheque-dd-details.index');
+
+
+    Route::get(
+        '/fees/cheque-dd-details/create',
+        [FeeChequeDdDetailController::class, 'create']
+    )
+    ->middleware(['auth', 'permission:cheque-dd.create'])
+    ->name('cheque-dd-details.create');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | AJAX - Receipt Details
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/fees/cheque-dd-details/receipt-details',
+        [FeeChequeDdDetailController::class, 'receiptDetails']
+    )
+    ->middleware(['auth', 'permission:cheque-dd.create'])
+    ->name('cheque-dd-details.receipt-details');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Store
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post(
+        '/fees/cheque-dd-details',
+        [FeeChequeDdDetailController::class, 'store']
+    )
+    ->middleware(['auth', 'permission:cheque-dd.create'])
+    ->name('cheque-dd-details.store');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Show
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/fees/cheque-dd-details/{chequeDdDetail}',
+        [FeeChequeDdDetailController::class, 'show']
+    )
+    ->middleware(['auth', 'permission:cheque-dd.view'])
+    ->name('cheque-dd-details.show');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Edit
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get(
+        '/fees/cheque-dd-details/{chequeDdDetail}/edit',
+        [FeeChequeDdDetailController::class, 'edit']
+    )
+    ->middleware(['auth', 'permission:cheque-dd.edit'])
+    ->name('cheque-dd-details.edit');
+
+
+    Route::put(
+        '/fees/cheque-dd-details/{chequeDdDetail}',
+        [FeeChequeDdDetailController::class, 'update']
+    )
+    ->middleware(['auth', 'permission:cheque-dd.edit'])
+    ->name('cheque-dd-details.update');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Deposit
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post(
+        '/fees/cheque-dd-details/{chequeDdDetail}/deposit',
+        [FeeChequeDdDetailController::class, 'deposit']
+    )
+    ->middleware(['auth', 'permission:cheque-dd.deposit'])
+    ->name('cheque-dd-details.deposit');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Clear
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post(
+        '/fees/cheque-dd-details/{chequeDdDetail}/clear',
+        [FeeChequeDdDetailController::class, 'clear']
+    )
+    ->middleware(['auth', 'permission:cheque-dd.clear'])
+    ->name('cheque-dd-details.clear');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Bounce
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post(
+        '/fees/cheque-dd-details/{chequeDdDetail}/bounce',
+        [FeeChequeDdDetailController::class, 'bounce']
+    )
+    ->middleware(['auth', 'permission:cheque-dd.bounce'])
+    ->name('cheque-dd-details.bounce');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cancel Tracking
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post(
+        '/fees/cheque-dd-details/{chequeDdDetail}/cancel',
+        [FeeChequeDdDetailController::class, 'cancel']
+    )
+    ->middleware(['auth', 'permission:cheque-dd.cancel'])
+    ->name('cheque-dd-details.cancel');  
+    
+
+    Route::get(
+        '/students/masters/tc-reasons',
+        [TcReasonController::class, 'index']
+    )
+    ->middleware('permission:tc-reason.view')
+    ->name('tc-reasons.index');
+
+
+    Route::get(
+        '/students/masters/tc-reasons/create',
+        [TcReasonController::class, 'create']
+    )
+    ->middleware('permission:tc-reason.create')
+    ->name('tc-reasons.create');
+
+
+    Route::post(
+        '/students/masters/tc-reasons',
+        [TcReasonController::class, 'store']
+    )
+    ->middleware('permission:tc-reason.create')
+    ->name('tc-reasons.store');
+
+
+    Route::get(
+        '/students/masters/tc-reasons/{tcReason}/edit',
+        [TcReasonController::class, 'edit']
+    )
+    ->middleware('permission:tc-reason.edit')
+    ->name('tc-reasons.edit');
+
+
+    Route::put(
+        '/students/masters/tc-reasons/{tcReason}',
+        [TcReasonController::class, 'update']
+    )
+    ->middleware('permission:tc-reason.edit')
+    ->name('tc-reasons.update');
+
+
+    Route::delete(
+        '/students/masters/tc-reasons/{tcReason}',
+        [TcReasonController::class, 'destroy']
+    )
+    ->middleware('permission:tc-reason.delete')
+    ->name('tc-reasons.destroy');
+
+    Route::get(
+        '/students/masters/tc-remark-options',
+        [TcRemarkOptionController::class, 'index']
+    )
+    ->middleware('permission:tc-remark-option.view')
+    ->name('tc-remark-options.index');
+
+
+    Route::get(
+        '/students/masters/tc-remark-options/create',
+        [TcRemarkOptionController::class, 'create']
+    )
+    ->middleware('permission:tc-remark-option.create')
+    ->name('tc-remark-options.create');
+
+
+    Route::post(
+        '/students/masters/tc-remark-options',
+        [TcRemarkOptionController::class, 'store']
+    )
+    ->middleware('permission:tc-remark-option.create')
+    ->name('tc-remark-options.store');
+
+
+    Route::get(
+        '/students/masters/tc-remark-options/{tcRemarkOption}/edit',
+        [TcRemarkOptionController::class, 'edit']
+    )
+    ->middleware('permission:tc-remark-option.edit')
+    ->name('tc-remark-options.edit');
+
+
+    Route::put(
+        '/students/masters/tc-remark-options/{tcRemarkOption}',
+        [TcRemarkOptionController::class, 'update']
+    )
+    ->middleware('permission:tc-remark-option.edit')
+    ->name('tc-remark-options.update');
+
+
+    Route::delete(
+        '/students/masters/tc-remark-options/{tcRemarkOption}',
+        [TcRemarkOptionController::class, 'destroy']
+    )
+    ->middleware('permission:tc-remark-option.delete')
+    ->name('tc-remark-options.destroy');
+
+    
+    Route::get(
+        '/students/masters/tc-last-result-options',
+        [TcLastResultOptionController::class, 'index']
+    )
+    ->middleware('permission:tc-last-result-option.view')
+    ->name('tc-last-result-options.index');
+
+    Route::get(
+        '/students/masters/tc-last-result-options/create',
+        [TcLastResultOptionController::class, 'create']
+    )
+    ->middleware('permission:tc-last-result-option.create')
+    ->name('tc-last-result-options.create');
+
+    Route::post(
+        '/students/masters/tc-last-result-options',
+        [TcLastResultOptionController::class, 'store']
+    )
+    ->middleware('permission:tc-last-result-option.create')
+    ->name('tc-last-result-options.store');
+
+    Route::get(
+        '/students/masters/tc-last-result-options/{tcLastResultOption}/edit',
+        [TcLastResultOptionController::class, 'edit']
+    )
+    ->middleware('permission:tc-last-result-option.edit')
+    ->name('tc-last-result-options.edit');
+
+    Route::put(
+        '/students/masters/tc-last-result-options/{tcLastResultOption}',
+        [TcLastResultOptionController::class, 'update']
+    )
+    ->middleware('permission:tc-last-result-option.edit')
+    ->name('tc-last-result-options.update');
+
+    Route::delete(
+        '/students/masters/tc-last-result-options/{tcLastResultOption}',
+        [TcLastResultOptionController::class, 'destroy']
+    )
+    ->middleware('permission:tc-last-result-option.delete')
+    ->name('tc-last-result-options.destroy');
+
+    Route::get(
+        '/students/masters/promotion-statuses',
+        [PromotionStatusController::class, 'index']
+    )
+    ->middleware('permission:promotion-status.view')
+    ->name('promotion-statuses.index');
+
+
+    Route::get(
+        '/students/masters/promotion-statuses/create',
+        [PromotionStatusController::class, 'create']
+    )
+    ->middleware('permission:promotion-status.create')
+    ->name('promotion-statuses.create');
+
+
+    Route::post(
+        '/students/masters/promotion-statuses',
+        [PromotionStatusController::class, 'store']
+    )
+    ->middleware('permission:promotion-status.create')
+    ->name('promotion-statuses.store');
+
+
+    Route::get(
+        '/students/masters/promotion-statuses/{promotionStatus}/edit',
+        [PromotionStatusController::class, 'edit']
+    )
+    ->middleware('permission:promotion-status.edit')
+    ->name('promotion-statuses.edit');
+
+
+    Route::put(
+        '/students/masters/promotion-statuses/{promotionStatus}',
+        [PromotionStatusController::class, 'update']
+    )
+    ->middleware('permission:promotion-status.edit')
+    ->name('promotion-statuses.update');
+
+
+    Route::delete(
+        '/students/masters/promotion-statuses/{promotionStatus}',
+        [PromotionStatusController::class, 'destroy']
+    )
+    ->middleware('permission:promotion-status.delete')
+    ->name('promotion-statuses.destroy');
 });

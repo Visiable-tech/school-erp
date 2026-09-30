@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
+use App\Models\PromotionStatus;
 use App\Models\SchoolClass;
 use App\Models\Section;
 use App\Models\StudentEnrollment;
@@ -15,7 +16,7 @@ class StudentPromotionController extends Controller
 {
     /*
     |--------------------------------------------------------------------------
-    | Promotion Page
+    | Promotions / Repetitions Page
     |--------------------------------------------------------------------------
     */
 
@@ -31,6 +32,7 @@ class StudentPromotionController extends Controller
             ->orderByDesc('start_date')
             ->get();
 
+
         $classes = SchoolClass::where(
                 'school_id',
                 $schoolId
@@ -40,11 +42,23 @@ class StudentPromotionController extends Controller
             ->orderBy('name')
             ->get();
 
+
+        $promotionStatuses = PromotionStatus::where(
+                'school_id',
+                $schoolId
+            )
+            ->where('status', 1)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+
         return view(
-            'student-promotions.index',
+            'students.management.promotions-repetitions',
             compact(
                 'academicYears',
-                'classes'
+                'classes',
+                'promotionStatuses'
             )
         );
     }
@@ -113,7 +127,7 @@ class StudentPromotionController extends Controller
             ->get([
                 'id',
                 'name',
-                'capacity'
+                'capacity',
             ]);
 
 
@@ -125,7 +139,7 @@ class StudentPromotionController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | Load Students
+    | Get Students
     |--------------------------------------------------------------------------
     */
 
@@ -154,9 +168,10 @@ class StudentPromotionController extends Controller
 
 
         /*
-         * Verify source section belongs to
-         * selected school/year/class.
-         */
+        |--------------------------------------------------------------------------
+        | Validate Source Section
+        |--------------------------------------------------------------------------
+        */
 
         $section = Section::where(
                 'school_id',
@@ -178,9 +193,16 @@ class StudentPromotionController extends Controller
             ->firstOrFail();
 
 
-        $enrollments = StudentEnrollment::with(
-                'student'
-            )
+        /*
+        |--------------------------------------------------------------------------
+        | Load Current Students
+        |--------------------------------------------------------------------------
+        */
+
+        $enrollments = StudentEnrollment::with([
+                'student',
+                'studentType',
+            ])
             ->where(
                 'school_id',
                 $schoolId
@@ -211,11 +233,14 @@ class StudentPromotionController extends Controller
             )
             ->whereHas(
                 'student',
-                fn ($query) =>
+                function ($query) {
+
                     $query->where(
                         'status',
                         1
-                    )
+                    );
+
+                }
             )
             ->orderByRaw(
                 "CASE
@@ -227,6 +252,12 @@ class StudentPromotionController extends Controller
             ->orderBy('roll_no')
             ->get();
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | JSON
+        |--------------------------------------------------------------------------
+        */
 
         $data = $enrollments->map(
             function ($enrollment) {
@@ -242,15 +273,30 @@ class StudentPromotionController extends Controller
                     'admission_no' =>
                         $enrollment
                             ->student
-                            ->admission_no,
+                            ?->admission_no,
 
                     'student_name' =>
                         $enrollment
                             ->student
-                            ->student_name,
+                            ?->student_name,
+
+                    'father_name' =>
+                        $enrollment
+                            ->student
+                            ?->father_name,
+
+                    'gender' =>
+                        $enrollment
+                            ->student
+                            ?->gender,
 
                     'roll_no' =>
                         $enrollment->roll_no,
+
+                    'student_type' =>
+                        $enrollment
+                            ->studentType
+                            ?->name,
 
                 ];
 
@@ -258,13 +304,15 @@ class StudentPromotionController extends Controller
         );
 
 
-        return response()->json($data);
+        return response()->json(
+            $data
+        );
     }
 
 
     /*
     |--------------------------------------------------------------------------
-    | Promote Students
+    | Process Promotion / Repetition
     |--------------------------------------------------------------------------
     */
 
@@ -272,6 +320,12 @@ class StudentPromotionController extends Controller
     {
         $schoolId = auth()->user()->school_id;
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Request
+        |--------------------------------------------------------------------------
+        */
 
         $validated = $request->validate([
 
@@ -292,6 +346,18 @@ class StudentPromotionController extends Controller
             ],
 
             'from_section_id' => [
+                'required',
+                'integer',
+            ],
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Promotion Status
+            |--------------------------------------------------------------------------
+            */
+
+            'promotion_status_id' => [
                 'required',
                 'integer',
             ],
@@ -338,6 +404,12 @@ class StudentPromotionController extends Controller
             ],
 
 
+            /*
+            |--------------------------------------------------------------------------
+            | Date
+            |--------------------------------------------------------------------------
+            */
+
             'promotion_date' => [
                 'required',
                 'date',
@@ -348,11 +420,48 @@ class StudentPromotionController extends Controller
 
         /*
         |--------------------------------------------------------------------------
+        | Promotion Status
+        |--------------------------------------------------------------------------
+        */
+
+        $promotionStatus =
+            PromotionStatus::where(
+                'school_id',
+                $schoolId
+            )
+            ->where(
+                'id',
+                $validated[
+                    'promotion_status_id'
+                ]
+            )
+            ->where(
+                'status',
+                1
+            )
+            ->first();
+
+
+        if (!$promotionStatus) {
+
+            throw ValidationException::withMessages([
+
+                'promotion_status_id' =>
+                    'Invalid promotion status.',
+
+            ]);
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
         | Validate Source Section
         |--------------------------------------------------------------------------
         */
 
-        $sourceSection = Section::where(
+        $sourceSection =
+            Section::where(
                 'school_id',
                 $schoolId
             )
@@ -381,8 +490,10 @@ class StudentPromotionController extends Controller
         if (!$sourceSection) {
 
             throw ValidationException::withMessages([
+
                 'from_section_id' =>
-                    'Invalid source section.'
+                    'Invalid source section.',
+
             ]);
 
         }
@@ -424,8 +535,10 @@ class StudentPromotionController extends Controller
         if (!$destinationSection) {
 
             throw ValidationException::withMessages([
+
                 'to_section_id' =>
-                    'Invalid destination section.'
+                    'Invalid destination section.',
+
             ]);
 
         }
@@ -433,7 +546,7 @@ class StudentPromotionController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Validate Academic Years
+        | Academic Years
         |--------------------------------------------------------------------------
         */
 
@@ -468,8 +581,10 @@ class StudentPromotionController extends Controller
 
 
         /*
-         * Prevent accidental backwards promotion.
-         */
+        |--------------------------------------------------------------------------
+        | Destination Must Be Later Year
+        |--------------------------------------------------------------------------
+        */
 
         if (
             $toYear->start_date
@@ -478,8 +593,10 @@ class StudentPromotionController extends Controller
         ) {
 
             throw ValidationException::withMessages([
+
                 'to_academic_year_id' =>
-                    'Destination academic year must be after the source academic year.'
+                    'Destination academic year must be after the source academic year.',
+
             ]);
 
         }
@@ -491,7 +608,8 @@ class StudentPromotionController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        SchoolClass::where(
+        $sourceClass =
+            SchoolClass::where(
                 'school_id',
                 $schoolId
             )
@@ -505,7 +623,8 @@ class StudentPromotionController extends Controller
             ->firstOrFail();
 
 
-        SchoolClass::where(
+        $destinationClass =
+            SchoolClass::where(
                 'school_id',
                 $schoolId
             )
@@ -521,136 +640,134 @@ class StudentPromotionController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Promotion Transaction
+        | Repeated Student
+        |--------------------------------------------------------------------------
+        |
+        | Repeated means:
+        |
+        | Next academic year
+        | Same class
+        |
+        */
+
+        if (
+            $promotionStatus->type
+            ===
+            'repeated'
+            &&
+            (int) $sourceClass->id
+            !==
+            (int) $destinationClass->id
+        ) {
+
+            throw ValidationException::withMessages([
+
+                'to_school_class_id' =>
+                    'For Repeated status, destination class must be the same as the current class.',
+
+            ]);
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Promoted Student
+        |--------------------------------------------------------------------------
+        |
+        | Prevent accidental selection of same class.
         |--------------------------------------------------------------------------
         */
 
-        DB::transaction(function () use (
-            $validated,
-            $schoolId,
-            $destinationSection
+        if (
+            $promotionStatus->type
+            ===
+            'promoted'
+            &&
+            (int) $sourceClass->id
+            ===
+            (int) $destinationClass->id
         ) {
 
-            /*
-             * Lock destination section while checking
-             * capacity and creating enrollments.
-             */
+            throw ValidationException::withMessages([
 
-            $lockedDestinationSection =
-                Section::whereKey(
-                    $destinationSection->id
-                )
-                ->lockForUpdate()
-                ->firstOrFail();
+                'to_school_class_id' =>
+                    'For Promoted status, please select a different destination class.',
+
+            ]);
+
+        }
 
 
-            /*
-            |--------------------------------------------------------------------------
-            | Get selected source enrollments
-            |--------------------------------------------------------------------------
-            */
+        /*
+        |--------------------------------------------------------------------------
+        | Transaction
+        |--------------------------------------------------------------------------
+        */
 
-            $sourceEnrollments =
-                StudentEnrollment::with(
-                    'student'
-                )
-                ->where(
-                    'school_id',
-                    $schoolId
-                )
-                ->whereIn(
-                    'id',
-                    $validated[
-                        'enrollment_ids'
-                    ]
-                )
-                ->where(
-                    'academic_year_id',
-                    $validated[
-                        'from_academic_year_id'
-                    ]
-                )
-                ->where(
-                    'school_class_id',
-                    $validated[
-                        'from_school_class_id'
-                    ]
-                )
-                ->where(
-                    'section_id',
-                    $validated[
-                        'from_section_id'
-                    ]
-                )
-                ->where(
-                    'is_current',
-                    1
-                )
-                ->where(
-                    'enrollment_status',
-                    'active'
-                )
-                ->where(
-                    'status',
-                    1
-                )
-                ->lockForUpdate()
-                ->get();
-
-
-            if (
-                $sourceEnrollments->count()
-                !==
-                count(
-                    $validated[
-                        'enrollment_ids'
-                    ]
-                )
+        DB::transaction(
+            function () use (
+                $validated,
+                $schoolId,
+                $destinationSection,
+                $promotionStatus
             ) {
 
-                throw ValidationException::withMessages([
-                    'enrollment_ids' =>
-                        'One or more selected students are no longer eligible for promotion.'
-                ]);
+                /*
+                |--------------------------------------------------------------------------
+                | Lock Destination Section
+                |--------------------------------------------------------------------------
+                */
 
-            }
+                $lockedDestinationSection =
+                    Section::whereKey(
+                        $destinationSection->id
+                    )
+                    ->lockForUpdate()
+                    ->firstOrFail();
 
 
-            /*
-            |--------------------------------------------------------------------------
-            | Capacity
-            |--------------------------------------------------------------------------
-            */
+                /*
+                |--------------------------------------------------------------------------
+                | Get Source Enrollments
+                |--------------------------------------------------------------------------
+                */
 
-            if (
-                $lockedDestinationSection
-                    ->capacity
-                &&
-                $lockedDestinationSection
-                    ->capacity > 0
-            ) {
-
-                $existingCount =
-                    StudentEnrollment::where(
+                $sourceEnrollments =
+                    StudentEnrollment::with(
+                        'student'
+                    )
+                    ->where(
                         'school_id',
                         $schoolId
+                    )
+                    ->whereIn(
+                        'id',
+                        $validated[
+                            'enrollment_ids'
+                        ]
                     )
                     ->where(
                         'academic_year_id',
                         $validated[
-                            'to_academic_year_id'
+                            'from_academic_year_id'
                         ]
                     )
                     ->where(
                         'school_class_id',
                         $validated[
-                            'to_school_class_id'
+                            'from_school_class_id'
                         ]
                     )
                     ->where(
                         'section_id',
-                        $lockedDestinationSection
-                            ->id
+                        $validated[
+                            'from_section_id'
+                        ]
+                    )
+                    ->where(
+                        'is_current',
+                        1
                     )
                     ->where(
                         'enrollment_status',
@@ -660,146 +777,273 @@ class StudentPromotionController extends Controller
                         'status',
                         1
                     )
-                    ->count();
+                    ->lockForUpdate()
+                    ->get();
 
 
-                $requiredSeats =
-                    $sourceEnrollments->count();
-
+                /*
+                |--------------------------------------------------------------------------
+                | Validate Selected Students
+                |--------------------------------------------------------------------------
+                */
 
                 if (
-                    $existingCount
-                    +
-                    $requiredSeats
-                    >
-                    $lockedDestinationSection
-                        ->capacity
+                    $sourceEnrollments->count()
+                    !==
+                    count(
+                        $validated[
+                            'enrollment_ids'
+                        ]
+                    )
                 ) {
 
                     throw ValidationException::withMessages([
-                        'to_section_id' =>
-                            'The destination section does not have enough available seats.'
-                    ]);
 
-                }
-
-            }
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Promote
-            |--------------------------------------------------------------------------
-            */
-
-            foreach (
-                $sourceEnrollments
-                as
-                $sourceEnrollment
-            ) {
-
-                /*
-                 * Student must not already have
-                 * destination-year enrollment.
-                 */
-
-                $alreadyEnrolled =
-                    StudentEnrollment::where(
-                        'student_id',
-                        $sourceEnrollment
-                            ->student_id
-                    )
-                    ->where(
-                        'academic_year_id',
-                        $validated[
-                            'to_academic_year_id'
-                        ]
-                    )
-                    ->exists();
-
-
-                if ($alreadyEnrolled) {
-
-                    throw ValidationException::withMessages([
                         'enrollment_ids' =>
-                            $sourceEnrollment
-                                ->student
-                                ->student_name
-                            .
-                            ' already has an enrollment for the destination academic year.'
+                            'One or more selected students are no longer eligible.',
+
                     ]);
 
                 }
 
 
                 /*
-                 * Close source enrollment.
-                 */
+                |--------------------------------------------------------------------------
+                | Destination Capacity
+                |--------------------------------------------------------------------------
+                */
 
-                $sourceEnrollment->update([
+                if (
+                    $lockedDestinationSection
+                        ->capacity
+                    &&
+                    $lockedDestinationSection
+                        ->capacity > 0
+                ) {
 
-                    'is_current' =>
-                        false,
+                    $existingCount =
+                        StudentEnrollment::where(
+                            'school_id',
+                            $schoolId
+                        )
+                        ->where(
+                            'academic_year_id',
+                            $validated[
+                                'to_academic_year_id'
+                            ]
+                        )
+                        ->where(
+                            'school_class_id',
+                            $validated[
+                                'to_school_class_id'
+                            ]
+                        )
+                        ->where(
+                            'section_id',
+                            $lockedDestinationSection
+                                ->id
+                        )
+                        ->where(
+                            'enrollment_status',
+                            'active'
+                        )
+                        ->where(
+                            'status',
+                            1
+                        )
+                        ->count();
 
-                    'enrollment_status' =>
-                        'promoted',
 
-                ]);
+                    $requiredSeats =
+                        $sourceEnrollments->count();
+
+
+                    if (
+                        $existingCount
+                        +
+                        $requiredSeats
+                        >
+                        $lockedDestinationSection
+                            ->capacity
+                    ) {
+
+                        throw ValidationException::withMessages([
+
+                            'to_section_id' =>
+                                'Destination section does not have enough available seats.',
+
+                        ]);
+
+                    }
+
+                }
 
 
                 /*
-                 * Create destination enrollment.
-                 *
-                 * Roll number intentionally left null.
-                 * It can be assigned after promotion.
-                 */
+                |--------------------------------------------------------------------------
+                | Process Selected Students
+                |--------------------------------------------------------------------------
+                */
 
-                StudentEnrollment::create([
+                foreach (
+                    $sourceEnrollments
+                    as
+                    $sourceEnrollment
+                ) {
 
-                    'school_id' =>
-                        $schoolId,
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Prevent Duplicate Enrollment
+                    |--------------------------------------------------------------------------
+                    */
 
-                    'student_id' =>
-                        $sourceEnrollment
-                            ->student_id,
+                    $alreadyEnrolled =
+                        StudentEnrollment::where(
+                            'school_id',
+                            $schoolId
+                        )
+                        ->where(
+                            'student_id',
+                            $sourceEnrollment
+                                ->student_id
+                        )
+                        ->where(
+                            'academic_year_id',
+                            $validated[
+                                'to_academic_year_id'
+                            ]
+                        )
+                        ->exists();
 
-                    'academic_year_id' =>
-                        $validated[
-                            'to_academic_year_id'
-                        ],
 
-                    'school_class_id' =>
-                        $validated[
-                            'to_school_class_id'
-                        ],
+                    if ($alreadyEnrolled) {
 
-                    'section_id' =>
-                        $lockedDestinationSection
-                            ->id,
+                        throw ValidationException::withMessages([
 
-                    'roll_no' =>
-                        null,
+                            'enrollment_ids' =>
+                                $sourceEnrollment
+                                    ->student
+                                    ->student_name
+                                .
+                                ' already has an enrollment for the destination academic year.',
 
-                    'enrollment_status' =>
-                        'active',
+                        ]);
 
-                    'enrollment_date' =>
-                        $validated[
-                            'promotion_date'
-                        ],
+                    }
 
-                    'is_current' =>
-                        true,
 
-                    'status' =>
-                        true,
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Close Current Enrollment
+                    |--------------------------------------------------------------------------
+                    |
+                    | Keep existing supported enrollment_status value.
+                    | Exact result is recorded through promotion_status_id.
+                    |--------------------------------------------------------------------------
+                    */
 
-                ]);
+                    $sourceEnrollment->update([
+
+                        'is_current' =>
+                            false,
+
+                        'enrollment_status' =>
+                            'promoted',
+
+                    ]);
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Create New Enrollment
+                    |--------------------------------------------------------------------------
+                    */
+
+                    StudentEnrollment::create([
+
+                        'school_id' =>
+                            $schoolId,
+
+                        'student_id' =>
+                            $sourceEnrollment
+                                ->student_id,
+
+                        'academic_year_id' =>
+                            $validated[
+                                'to_academic_year_id'
+                            ],
+
+                        'school_class_id' =>
+                            $validated[
+                                'to_school_class_id'
+                            ],
+
+                        'section_id' =>
+                            $lockedDestinationSection
+                                ->id,
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Preserve Student Type
+                        |--------------------------------------------------------------------------
+                        */
+
+                        'student_type_id' =>
+                            $sourceEnrollment
+                                ->student_type_id,
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Promotion / Repetition Status
+                        |--------------------------------------------------------------------------
+                        */
+
+                        'promotion_status_id' =>
+                            $promotionStatus->id,
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | New Roll Will Be Assigned Later
+                        |--------------------------------------------------------------------------
+                        */
+
+                        'roll_no' =>
+                            null,
+
+
+                        'enrollment_status' =>
+                            'active',
+
+
+                        'enrollment_date' =>
+                            $validated[
+                                'promotion_date'
+                            ],
+
+
+                        'is_current' =>
+                            true,
+
+
+                        'status' =>
+                            true,
+
+                    ]);
+
+                }
 
             }
+        );
 
-        });
 
+        /*
+        |--------------------------------------------------------------------------
+        | Success
+        |--------------------------------------------------------------------------
+        */
 
         return redirect()
             ->route(
@@ -807,7 +1051,17 @@ class StudentPromotionController extends Controller
             )
             ->with(
                 'success',
-                'Selected students promoted successfully.'
+                count(
+                    $validated[
+                        'enrollment_ids'
+                    ]
+                )
+                .
+                ' student(s) processed successfully as '
+                .
+                $promotionStatus->name
+                .
+                '.'
             );
     }
 }

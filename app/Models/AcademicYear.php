@@ -63,4 +63,11 @@ class AcademicYear extends Model
             AdmissionEnquiry::class
         );
     }
+
+    public function lateFeeFineRules()
+    {
+        return $this->hasMany(
+            LateFeeFineRule::class
+        );
+    }
 }

@@ -9,7 +9,7 @@
     <div>
 
         <h4 class="mb-1">
-            Edit Fee Structure
+            Edit Fee Template
         </h4>
 
         <div class="text-muted">
@@ -49,12 +49,12 @@
 
             <div class="mt-4">
 
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                >
-                    <i class="bi bi-check-circle me-1"></i>
-                    Update Fee Structure
+                <button type="submit"
+                        class="btn btn-primary">
+
+                    <i class="bi bi-check-circle"></i>
+                    Update Fee Template
+
                 </button>
 
                 <a

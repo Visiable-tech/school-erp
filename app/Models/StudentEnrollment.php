@@ -16,6 +16,8 @@ class StudentEnrollment extends Model
         'academic_year_id',
         'school_class_id',
         'section_id',
+        'student_type_id',
+        'promotion_status_id',
 
         'roll_no',
 
@@ -62,6 +64,44 @@ class StudentEnrollment extends Model
         return $this->hasMany(
             StudentAttendance::class,
             'student_enrollment_id'
+        );
+    }
+
+    public function feeAssignments()
+    {
+        return $this->hasMany(
+            StudentFeeAssignment::class,
+            'student_enrollment_id'
+        );
+    }
+
+    public function feeDues()
+    {
+        return $this->hasMany(
+            StudentFeeDue::class,
+            'student_enrollment_id'
+        );
+    }
+
+    public function feeCollections()
+    {
+        return $this->hasMany(
+            FeeCollection::class,
+            'student_enrollment_id'
+        );
+    }
+
+    public function studentType()
+    {
+        return $this->belongsTo(
+            StudentType::class
+        );
+    }  
+    
+    public function promotionStatus()
+    {
+        return $this->belongsTo(
+            PromotionStatus::class
         );
     }
     

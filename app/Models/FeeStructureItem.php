@@ -19,27 +19,29 @@ class FeeStructureItem extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'sort_order' => 'integer',
         'status' => 'boolean',
     ];
 
-    public function feeStructure()
+    public function structure()
     {
-        return $this->belongsTo(FeeStructure::class);
+        return $this->belongsTo(
+            FeeStructure::class,
+            'fee_structure_id'
+        );
     }
 
     public function feeHead()
     {
-        return $this->belongsTo(FeeHead::class);
+        return $this->belongsTo(
+            FeeHead::class
+        );
     }
 
-    // Fee installments / schedule
     public function installments()
     {
         return $this->hasMany(
-            FeeInstallment::class,
-            'fee_structure_item_id'
-        )
-        ->orderBy('sort_order')
-        ->orderBy('due_date');
+            FeeInstallment::class
+        );
     }
 }

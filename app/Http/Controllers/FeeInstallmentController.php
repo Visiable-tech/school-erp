@@ -350,36 +350,27 @@ class FeeInstallmentController extends Controller
             $feeStructureItem
         );
 
-        $feeStructure->load('academicYear');
-
-        $feeStructureItem->load('feeHead');
-
-
         $validated = $request->validate([
-
-            'due_day' =>
-                'required|integer|min:1|max:28',
-
+            'due_day' => [
+                'required',
+                'integer',
+                'min:1',
+                'max:28',
+            ],
         ]);
 
+        $feeStructure->load(
+            'academicYear'
+        );
 
-        if (
-            $feeStructureItem
-                ->installments()
-                ->exists()
-        ) {
+        $feeStructureItem->load(
+            'feeHead.feeCycle'
+        );
 
-            return back()->with(
-                'error',
-                'Installments already exist for this Fee Head. Delete or edit the existing schedule first.'
-            );
-        }
-
-
-        $year =
+        $academicYear =
             $feeStructure->academicYear;
 
-        if (!$year) {
+        if (!$academicYear) {
 
             return back()->with(
                 'error',
@@ -387,137 +378,239 @@ class FeeInstallmentController extends Controller
             );
         }
 
+        $feeHead =
+            $feeStructureItem->feeHead;
 
-        $start =
-            $year->start_date->copy()
-                ->startOfMonth();
+        if (!$feeHead) {
 
-        $end =
-            $year->end_date->copy()
-                ->startOfMonth();
+            return back()->with(
+                'error',
+                'Fee Component not found.'
+            );
+        }
 
-        $frequency =
-            $feeStructureItem
-                ->feeHead
-                ->frequency;
+        $feeCycle =
+            $feeHead->feeCycle;
 
+        if (!$feeCycle) {
+
+            return back()->with(
+                'error',
+                'Fee Cycle is not assigned to "' .
+                $feeHead->name .
+                '". Please configure the Fee Component first.'
+            );
+        }
+
+        /*
+        * Don't regenerate after student dues
+        * have started using this schedule.
+        */
+        $hasUsedInstallments =
+            FeeInstallment::where(
+                'fee_structure_item_id',
+                $feeStructureItem->id
+            )
+            ->whereHas('studentDues')
+            ->exists();
+
+        if ($hasUsedInstallments) {
+
+            return back()->with(
+                'error',
+                'This schedule is already used in student fee dues and cannot be regenerated.'
+            );
+        }
 
         DB::transaction(function () use (
             $feeStructure,
             $feeStructureItem,
-            $start,
-            $end,
-            $frequency,
+            $academicYear,
+            $feeCycle,
             $validated
         ) {
 
-            $months = [];
+            /*
+            * Existing unused schedule can safely
+            * be rebuilt.
+            */
+            FeeInstallment::where(
+                'fee_structure_item_id',
+                $feeStructureItem->id
+            )->delete();
 
-            $cursor = $start->copy();
 
-            while ($cursor <= $end) {
+            $yearStart =
+                $academicYear->start_date
+                    ->copy()
+                    ->startOfDay();
 
-                $months[] =
-                    $cursor->copy();
+            $yearEnd =
+                $academicYear->end_date
+                    ->copy()
+                    ->endOfDay();
 
-                $cursor->addMonth();
+
+            /*
+            * Determine cycle interval.
+            */
+            $intervalMonths = match (
+                $feeCycle->cycle_type
+            ) {
+                'monthly' => 1,
+                'quarterly' => 3,
+                'half_yearly' => 6,
+                'annual' => 12,
+                'one_time' => null,
+                'custom' => null,
+                default => null,
+            };
+
+
+            /*
+            * Custom cycles should not be guessed.
+            * They can be manually configured using
+            * your existing Add Installment screen.
+            */
+            if (
+                $feeCycle->cycle_type === 'custom'
+            ) {
+                throw new \RuntimeException(
+                    'Custom Fee Cycle schedules must be created manually.'
+                );
             }
 
 
             /*
-            |--------------------------------------------------------------------------
-            | Determine installment months
-            |--------------------------------------------------------------------------
+            * One-time charge.
             */
-
-            switch ($frequency) {
-
-                case 'monthly':
-
-                    $scheduleMonths =
-                        $months;
-
-                    break;
-
-
-                case 'quarterly':
-
-                    $scheduleMonths =
-                        collect($months)
-                            ->values()
-                            ->filter(
-                                fn ($month, $index) =>
-                                    $index % 3 === 0
-                            )
-                            ->values()
-                            ->all();
-
-                    break;
-
-
-                case 'half_yearly':
-
-                    $scheduleMonths =
-                        collect($months)
-                            ->values()
-                            ->filter(
-                                fn ($month, $index) =>
-                                    $index % 6 === 0
-                            )
-                            ->values()
-                            ->all();
-
-                    break;
-
-
-                case 'annual':
-
-                case 'one_time':
-
-                    $scheduleMonths = [
-                        $start->copy()
-                    ];
-
-                    break;
-
-
-                default:
-
-                    $scheduleMonths = [];
-            }
-
-
-            /*
-            |--------------------------------------------------------------------------
-            | Create installments
-            |--------------------------------------------------------------------------
-            */
-
-            foreach (
-                $scheduleMonths
-                as $index => $month
+            if (
+                $feeCycle->cycle_type === 'one_time'
             ) {
 
-                /*
-                 * For monthly:
-                 * each installment = configured amount.
-                 *
-                 * Quarterly/half-yearly/etc. also use the
-                 * configured Fee Head amount per installment.
-                 */
+                $periodStart =
+                    $yearStart->copy();
+
+                $periodEnd =
+                    $yearEnd->copy();
 
                 $dueDate =
-                    $month->copy()
+                    $periodStart->copy()
                         ->day(
                             min(
                                 $validated['due_day'],
-                                $month->daysInMonth
+                                $periodStart->daysInMonth
+                            )
+                        );
+
+                FeeInstallment::create([
+
+                    'school_id' =>
+                        auth()->user()->school_id,
+
+                    'fee_structure_id' =>
+                        $feeStructure->id,
+
+                    'fee_structure_item_id' =>
+                        $feeStructureItem->id,
+
+                    'installment_name' =>
+                        'One Time',
+
+                    'period_start' =>
+                        $periodStart->toDateString(),
+
+                    'period_end' =>
+                        $periodEnd->toDateString(),
+
+                    'due_date' =>
+                        $dueDate->toDateString(),
+
+                    'amount' =>
+                        $feeStructureItem->amount,
+
+                    'sort_order' => 1,
+
+                    'status' => true,
+                ]);
+
+                return;
+            }
+
+
+            /*
+            * Monthly / Quarterly /
+            * Half-Yearly / Annual
+            */
+            $cursor =
+                $yearStart->copy();
+
+            $installmentNo = 1;
+
+            while ($cursor->lte($yearEnd)) {
+
+                $periodStart =
+                    $cursor->copy();
+
+                $periodEnd =
+                    $cursor->copy()
+                        ->addMonths($intervalMonths)
+                        ->subDay();
+
+                if ($periodEnd->gt($yearEnd)) {
+                    $periodEnd =
+                        $yearEnd->copy();
+                }
+
+
+                /*
+                * Due date belongs to the first
+                * month of this cycle.
+                */
+                $dueDate =
+                    $periodStart->copy()
+                        ->day(
+                            min(
+                                $validated['due_day'],
+                                $periodStart->daysInMonth
                             )
                         );
 
 
-                $name =
-                    $month->format('M Y');
+                /*
+                * Better human-readable names.
+                */
+                $installmentName = match (
+                    $feeCycle->cycle_type
+                ) {
+
+                    'monthly' =>
+                        $periodStart->format(
+                            'M Y'
+                        ),
+
+                    'quarterly' =>
+                        'Quarter ' .
+                        $installmentNo .
+                        ' (' .
+                        $periodStart->format('M Y') .
+                        ')',
+
+                    'half_yearly' =>
+                        'Half Year ' .
+                        $installmentNo .
+                        ' (' .
+                        $periodStart->format('M Y') .
+                        ')',
+
+                    'annual' =>
+                        'Annual ' .
+                        $periodStart->format('Y'),
+
+                    default =>
+                        'Installment ' .
+                        $installmentNo,
+                };
 
 
                 FeeInstallment::create([
@@ -532,33 +625,39 @@ class FeeInstallmentController extends Controller
                         $feeStructureItem->id,
 
                     'installment_name' =>
-                        $name,
+                        $installmentName,
 
                     'period_start' =>
-                        $month->copy()
-                            ->startOfMonth()
-                            ->toDateString(),
+                        $periodStart->toDateString(),
 
                     'period_end' =>
-                        $month->copy()
-                            ->endOfMonth()
-                            ->toDateString(),
+                        $periodEnd->toDateString(),
 
                     'due_date' =>
                         $dueDate->toDateString(),
 
+                    /*
+                    * Fee Template amount means
+                    * amount PER cycle.
+                    */
                     'amount' =>
                         $feeStructureItem->amount,
 
                     'sort_order' =>
-                        $index + 1,
+                        $installmentNo,
 
-                    'status' =>
-                        true,
-
+                    'status' => true,
                 ]);
-            }
 
+
+                $cursor =
+                    $cursor->copy()
+                        ->addMonths(
+                            $intervalMonths
+                        );
+
+                $installmentNo++;
+            }
         });
 
 
@@ -569,7 +668,7 @@ class FeeInstallmentController extends Controller
             )
             ->with(
                 'success',
-                'Fee schedule generated successfully.'
+                'Fee Cycle schedule generated successfully.'
             );
     }
 

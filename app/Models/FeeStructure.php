@@ -39,9 +39,11 @@ class FeeStructure extends Model
 
     public function items()
     {
-        return $this->hasMany(FeeStructureItem::class)
-            ->orderBy('sort_order');
+        return $this->hasMany(
+            FeeStructureItem::class
+        )->orderBy('sort_order');
     }
+
 
     public function feeHeads()
     {
@@ -62,5 +64,15 @@ class FeeStructure extends Model
         return $this->hasMany(FeeInstallment::class)
             ->orderBy('sort_order')
             ->orderBy('due_date');
+    }
+
+    public function studentAssignments()
+    {
+        return $this->hasMany(StudentFeeAssignment::class);
+    }
+
+    public function studentDues()
+    {
+        return $this->hasMany(StudentFeeDue::class);
     }
 }

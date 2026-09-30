@@ -109,4 +109,73 @@ class Student extends Model
         return $this->hasMany(StudentAttendance::class);
     }
 
+    public function feeAssignments()
+    {
+        return $this->hasMany(StudentFeeAssignment::class);
+    }
+
+    public function feeDues()
+    {
+        return $this->hasMany(StudentFeeDue::class);
+    }
+
+    public function feeCollections()
+    {
+        return $this->hasMany(FeeCollection::class);
+    }
+
+    public function optionalFeeAssignments()
+    {
+        return $this->hasMany(
+            StudentOptionalFeeAssignment::class
+        );
+    }
+
+    public function images()
+    {
+        return $this->hasMany(
+            StudentImage::class
+        );
+    }
+
+    public function studentImage()
+    {
+        return $this->hasOne(
+            StudentImage::class
+        )->where(
+            'image_type',
+            StudentImage::TYPE_STUDENT
+        );
+    }
+
+    public function fatherImage()
+    {
+        return $this->hasOne(
+            StudentImage::class
+        )->where(
+            'image_type',
+            StudentImage::TYPE_FATHER
+        );
+    }
+
+    public function motherImage()
+    {
+        return $this->hasOne(
+            StudentImage::class
+        )->where(
+            'image_type',
+            StudentImage::TYPE_MOTHER
+        );
+    }
+
+    public function guardianImage()
+    {
+        return $this->hasOne(
+            StudentImage::class
+        )->where(
+            'image_type',
+            StudentImage::TYPE_GUARDIAN
+        );
+    }
+
 }

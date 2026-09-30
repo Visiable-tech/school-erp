@@ -34,6 +34,9 @@
 </div>
 
 
+
+
+
 {{-- FILTER --}}
 
 <div class="card border-0 shadow-sm mb-4">
@@ -47,7 +50,9 @@
 
             <div class="row g-2">
 
-                <div class="col-md-5">
+            
+
+                <div class="col-md-4">
 
                     <input
                         type="text"
@@ -62,79 +67,51 @@
 
                 <div class="col-md-3">
 
-                    <select
-                        name="frequency"
-                        class="form-select"
-                    >
+                    <select name="group_id"
+                            class="form-select">
 
                         <option value="">
-                            All Frequencies
+                            All Component Groups
                         </option>
 
-                        <option
-                            value="one_time"
-                            @selected(request('frequency') == 'one_time')
-                        >
-                            One Time
-                        </option>
+                        @foreach($groups as $group)
 
-                        <option
-                            value="monthly"
-                            @selected(request('frequency') == 'monthly')
-                        >
-                            Monthly
-                        </option>
+                            <option value="{{ $group->id }}"
+                                {{ request('group_id') == $group->id
+                                    ? 'selected'
+                                    : '' }}>
 
-                        <option
-                            value="quarterly"
-                            @selected(request('frequency') == 'quarterly')
-                        >
-                            Quarterly
-                        </option>
+                                {{ $group->name }}
 
-                        <option
-                            value="half_yearly"
-                            @selected(request('frequency') == 'half_yearly')
-                        >
-                            Half Yearly
-                        </option>
+                            </option>
 
-                        <option
-                            value="annual"
-                            @selected(request('frequency') == 'annual')
-                        >
-                            Annual
-                        </option>
+                        @endforeach
 
                     </select>
 
                 </div>
 
+                <div class="col-md-3">
 
-                <div class="col-md-2">
-
-                    <select
-                        name="status"
-                        class="form-select"
-                    >
+                    <select name="cycle_id"
+                            class="form-select">
 
                         <option value="">
-                            All Status
+                            All Fee Cycles
                         </option>
 
-                        <option
-                            value="1"
-                            @selected(request('status') === '1')
-                        >
-                            Active
-                        </option>
+                        @foreach($cycles as $cycle)
 
-                        <option
-                            value="0"
-                            @selected(request('status') === '0')
-                        >
-                            Inactive
-                        </option>
+                            <option value="{{ $cycle->id }}"
+                                {{ request('cycle_id') == $cycle->id
+                                    ? 'selected'
+                                    : '' }}>
+
+                                {{ $cycle->name }}
+
+                            </option>
+
+                        @endforeach
 
                     </select>
 
@@ -177,223 +154,161 @@
         <table class="table table-hover align-middle mb-0">
 
             <thead class="table-light">
-
                 <tr>
-
-                    <th width="80">
-                        #
-                    </th>
-
-                    <th>
-                        Fee Head
-                    </th>
-
-                    <th width="130">
-                        Code
-                    </th>
-
-                    <th width="160">
-                        Frequency
-                    </th>
-
-                    <th width="120">
-                        Optional
-                    </th>
-
-                    <th width="120">
-                        Status
-                    </th>
-
-                    <th width="150">
-                        Action
-                    </th>
-
+                    <th>#</th>
+                    <th>Component</th>
+                    <th>Code</th>
+                    <th>Group</th>
+                    <th>Fee Cycle</th>
+                    <th>Type</th>
+                    <th>Concession</th>
+                    <th>Waiver</th>
+                    <th>Status</th>
+                    <th width="120">Action</th>
                 </tr>
+                </thead>
 
-            </thead>
-
-
-            <tbody>
+                <tbody>
 
                 @forelse($feeHeads as $feeHead)
 
-                    <tr>
+                <tr>
 
-                        <td>
-                            {{ $feeHeads->firstItem() + $loop->index }}
-                        </td>
+                    <td>
+                        {{ $feeHeads->firstItem() + $loop->index }}
+                    </td>
 
+                    <td>
+                        <strong>{{ $feeHead->name }}</strong>
+                    </td>
 
-                        <td class="fw-semibold">
-                            {{ $feeHead->name }}
-                        </td>
+                    <td>
+                        {{ $feeHead->code ?: '—' }}
+                    </td>
 
+                    <td>
+                        {{ optional($feeHead->componentGroup)->name ?: '—' }}
+                    </td>
 
-                        <td>
-                            {{ $feeHead->code ?: '-' }}
-                        </td>
+                    <td>
+                        {{ optional($feeHead->feeCycle)->name ?: '—' }}
+                    </td>
 
+                    <td>
 
-                        <td>
+                        @if($feeHead->is_optional)
 
-                            @switch($feeHead->frequency)
+                            <span class="badge bg-info">
+                                Optional
+                            </span>
 
-                                @case('one_time')
-                                    One Time
-                                    @break
+                        @else
 
-                                @case('monthly')
-                                    Monthly
-                                    @break
+                            <span class="badge bg-primary">
+                                Regular
+                            </span>
 
-                                @case('quarterly')
-                                    Quarterly
-                                    @break
+                        @endif
 
-                                @case('half_yearly')
-                                    Half Yearly
-                                    @break
+                        @if($feeHead->is_refundable)
 
-                                @case('annual')
-                                    Annual
-                                    @break
+                            <span class="badge bg-warning text-dark">
+                                Refundable
+                            </span>
 
-                            @endswitch
+                        @endif
 
-                        </td>
+                    </td>
 
+                    <td>
+                        {{ $feeHead->allow_concession ? 'Yes' : 'No' }}
+                    </td>
 
-                        <td>
+                    <td>
+                        {{ $feeHead->allow_waiver ? 'Yes' : 'No' }}
+                    </td>
 
-                            @if($feeHead->is_optional)
+                    <td>
 
-                                <span class="badge bg-info text-dark">
-                                    Optional
-                                </span>
+                        @if($feeHead->status)
 
-                            @else
+                            <span class="badge bg-success">
+                                Active
+                            </span>
 
-                                <span class="badge bg-secondary">
-                                    Mandatory
-                                </span>
+                        @else
 
-                            @endif
+                            <span class="badge bg-secondary">
+                                Inactive
+                            </span>
 
-                        </td>
+                        @endif
 
+                    </td>
 
-                        <td>
+                    <td>
 
-                            @if($feeHead->status)
+                        <div class="d-flex gap-1">
 
-                                <span class="badge bg-success">
-                                    Active
-                                </span>
+                            @can('fee-head.edit')
 
-                            @else
+                            <a href="{{ route(
+                                    'fee-heads.edit',
+                                    $feeHead
+                                ) }}"
+                            class="btn btn-sm btn-outline-primary">
 
-                                <span class="badge bg-danger">
-                                    Inactive
-                                </span>
+                                <i class="bi bi-pencil"></i>
 
-                            @endif
-
-                        </td>
-
-
-                        <td>
-
-                            <div class="d-flex gap-1">
-
-                                @can('fee-head.edit')
-
-                                    <a
-                                        href="{{ route(
-                                            'fee-heads.edit',
-                                            $feeHead
-                                        ) }}"
-                                        class="btn btn-sm btn-outline-primary"
-                                        title="Edit"
-                                    >
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-
-                                @endcan
-
-
-                                @can('fee-head.delete')
-
-                                    <form
-                                        method="POST"
-                                        action="{{ route(
-                                            'fee-heads.destroy',
-                                            $feeHead
-                                        ) }}"
-                                        onsubmit="
-                                            return confirm(
-                                                'Delete this Fee Head?'
-                                            );
-                                        "
-                                    >
-
-                                        @csrf
-                                        @method('DELETE')
-
-                                        <button
-                                            type="submit"
-                                            class="btn btn-sm btn-outline-danger"
-                                            title="Delete"
-                                        >
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-
-                                    </form>
-
-                                @endcan
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-                @empty
-
-                    <tr>
-
-                        <td
-                            colspan="7"
-                            class="text-center py-5"
-                        >
-
-                            <i class="bi bi-cash-stack fs-1 text-muted"></i>
-
-                            <h5 class="mt-3">
-                                No Fee Heads Found
-                            </h5>
-
-                            <div class="text-muted mb-3">
-                                Create your first fee head to start configuring fees.
-                            </div>
-
-                            @can('fee-head.create')
-
-                                <a
-                                    href="{{ route('fee-heads.create') }}"
-                                    class="btn btn-primary"
-                                >
-                                    Add Fee Head
-                                </a>
+                            </a>
 
                             @endcan
 
-                        </td>
 
-                    </tr>
+                            @can('fee-head.delete')
+
+                            <form method="POST"
+                                action="{{ route(
+                                    'fee-heads.destroy',
+                                    $feeHead
+                                ) }}"
+                                onsubmit="return confirm(
+                                    'Delete this Fee Component?'
+                                );">
+
+                                @csrf
+                                @method('DELETE')
+
+                                <button class="btn btn-sm btn-outline-danger">
+
+                                    <i class="bi bi-trash"></i>
+
+                                </button>
+
+                            </form>
+
+                            @endcan
+
+                        </div>
+
+                    </td>
+
+                </tr>
+
+                @empty
+
+                <tr>
+                    <td colspan="10"
+                        class="text-center text-muted py-5">
+
+                        No Fee Components found.
+
+                    </td>
+                </tr>
 
                 @endforelse
 
-            </tbody>
+                </tbody>
 
         </table>
 

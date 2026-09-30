@@ -1,170 +1,164 @@
 <div class="row g-3">
 
-    {{-- NAME --}}
-
-    <div class="col-md-6">
+    {{-- Component Group --}}
+    <div class="col-md-4">
 
         <label class="form-label">
-            Fee Head Name
+            Component Group
             <span class="text-danger">*</span>
         </label>
 
-        <input
-            type="text"
-            name="name"
-            class="form-control @error('name') is-invalid @enderror"
-            value="{{ old('name', $feeHead->name ?? '') }}"
-            placeholder="Example: Tuition Fee"
-            required
-        >
-
-        @error('name')
-            <div class="invalid-feedback">
-                {{ $message }}
-            </div>
-        @enderror
-
-    </div>
-
-
-    {{-- CODE --}}
-
-    <div class="col-md-3">
-
-        <label class="form-label">
-            Code
-        </label>
-
-        <input
-            type="text"
-            name="code"
-            class="form-control @error('code') is-invalid @enderror"
-            value="{{ old('code', $feeHead->code ?? '') }}"
-            placeholder="Example: TUF"
-        >
-
-        @error('code')
-            <div class="invalid-feedback">
-                {{ $message }}
-            </div>
-        @enderror
-
-    </div>
-
-
-    {{-- FREQUENCY --}}
-
-    <div class="col-md-3">
-
-        <label class="form-label">
-            Frequency
-            <span class="text-danger">*</span>
-        </label>
-
-        <select
-            name="frequency"
-            class="form-select @error('frequency') is-invalid @enderror"
-            required
-        >
+        <select name="fee_component_group_id"
+                class="form-select"
+                required>
 
             <option value="">
-                Select Frequency
+                Select Component Group
             </option>
 
-            @php
-                $frequencies = [
-                    'one_time' => 'One Time',
-                    'monthly' => 'Monthly',
-                    'quarterly' => 'Quarterly',
-                    'half_yearly' => 'Half Yearly',
-                    'annual' => 'Annual',
-                ];
-            @endphp
-
-            @foreach($frequencies as $key => $label)
+            @foreach($groups as $group)
 
                 <option
-                    value="{{ $key }}"
-                    @selected(
-                        old(
-                            'frequency',
-                            $feeHead->frequency ?? 'monthly'
-                        ) == $key
-                    )
+                    value="{{ $group->id }}"
+                    {{ old(
+                        'fee_component_group_id',
+                        $feeHead->fee_component_group_id ?? ''
+                    ) == $group->id
+                        ? 'selected'
+                        : '' }}
                 >
-                    {{ $label }}
+                    {{ $group->name }}
                 </option>
 
             @endforeach
 
         </select>
 
-        @error('frequency')
-            <div class="invalid-feedback">
-                {{ $message }}
-            </div>
-        @enderror
+    </div>
+
+
+    {{-- Fee Cycle --}}
+    <div class="col-md-4">
+
+        <label class="form-label">
+            Fee Cycle
+            <span class="text-danger">*</span>
+        </label>
+
+        <select name="fee_cycle_id"
+                class="form-select"
+                required>
+
+            <option value="">
+                Select Fee Cycle
+            </option>
+
+            @foreach($cycles as $cycle)
+
+                <option
+                    value="{{ $cycle->id }}"
+                    {{ old(
+                        'fee_cycle_id',
+                        $feeHead->fee_cycle_id ?? ''
+                    ) == $cycle->id
+                        ? 'selected'
+                        : '' }}
+                >
+                    {{ $cycle->name }}
+                    ({{ $cycle->installments_count }})
+                </option>
+
+            @endforeach
+
+        </select>
 
     </div>
 
 
-    {{-- SORT ORDER --}}
+    {{-- Name --}}
+    <div class="col-md-4">
 
-    <div class="col-md-3">
+        <label class="form-label">
+            Component Name
+            <span class="text-danger">*</span>
+        </label>
+
+        <input type="text"
+               name="name"
+               class="form-control"
+               value="{{ old(
+                    'name',
+                    $feeHead->name ?? ''
+               ) }}"
+               placeholder="Example: Tuition Fee"
+               required>
+
+    </div>
+
+
+    {{-- Code --}}
+    <div class="col-md-4">
+
+        <label class="form-label">
+            Component Code
+        </label>
+
+        <input type="text"
+               name="code"
+               class="form-control"
+               value="{{ old(
+                    'code',
+                    $feeHead->code ?? ''
+               ) }}"
+               placeholder="TUITION">
+
+    </div>
+
+
+    {{-- Sort --}}
+    <div class="col-md-4">
 
         <label class="form-label">
             Sort Order
         </label>
 
-        <input
-            type="number"
-            name="sort_order"
-            min="0"
-            class="form-control"
-            value="{{ old(
-                'sort_order',
-                $feeHead->sort_order ?? 0
-            ) }}"
-        >
+        <input type="number"
+               name="sort_order"
+               min="0"
+               class="form-control"
+               value="{{ old(
+                    'sort_order',
+                    $feeHead->sort_order ?? 0
+               ) }}">
 
     </div>
 
 
-    {{-- OPTIONAL --}}
-
-    <div class="col-md-3">
+    {{-- Status --}}
+    <div class="col-md-4">
 
         <label class="form-label d-block">
-            Optional Fee?
+            Status
         </label>
-
-        <input
-            type="hidden"
-            name="is_optional"
-            value="0"
-        >
 
         <div class="form-check form-switch mt-2">
 
-            <input
-                type="checkbox"
-                name="is_optional"
-                value="1"
-                class="form-check-input"
-                id="is_optional"
-                @checked(
-                    old(
-                        'is_optional',
-                        $feeHead->is_optional ?? false
-                    )
-                )
-            >
+            <input type="checkbox"
+                   name="status"
+                   value="1"
+                   id="status"
+                   class="form-check-input"
 
-            <label
-                class="form-check-label"
-                for="is_optional"
-            >
-                Yes
+                   {{ old(
+                       'status',
+                       isset($feeHead)
+                           ? $feeHead->status
+                           : true
+                   ) ? 'checked' : '' }}>
+
+            <label class="form-check-label"
+                   for="status">
+                Active
             </label>
 
         </div>
@@ -172,44 +166,152 @@
     </div>
 
 
-    {{-- STATUS --}}
+    {{-- Description --}}
+    <div class="col-md-12">
 
-    <div class="col-md-3">
-
-        <label class="form-label d-block">
-            Status
+        <label class="form-label">
+            Description
         </label>
 
-        <input
-            type="hidden"
-            name="status"
-            value="0"
-        >
+        <textarea name="description"
+                  rows="3"
+                  class="form-control"
+                  placeholder="Optional description">{{ old(
+                      'description',
+                      $feeHead->description ?? ''
+                  ) }}</textarea>
 
-        <div class="form-check form-switch mt-2">
+    </div>
 
-            <input
-                type="checkbox"
-                name="status"
-                value="1"
-                class="form-check-input"
-                id="status"
-                @checked(
-                    old(
-                        'status',
-                        isset($feeHead)
-                            ? $feeHead->status
-                            : true
-                    )
-                )
-            >
 
-            <label
-                class="form-check-label"
-                for="status"
-            >
-                Active
-            </label>
+    {{-- Behaviour --}}
+    <div class="col-12">
+
+        <div class="card bg-light border-0">
+
+            <div class="card-body">
+
+                <h6 class="mb-3">
+                    Component Behaviour
+                </h6>
+
+                <div class="row g-3">
+
+
+                    <div class="col-md-3">
+
+                        <div class="form-check">
+
+                            <input type="checkbox"
+                                   name="is_optional"
+                                   value="1"
+                                   class="form-check-input"
+                                   id="is_optional"
+
+                                   {{ old(
+                                       'is_optional',
+                                       $feeHead->is_optional ?? false
+                                   ) ? 'checked' : '' }}>
+
+                            <label class="form-check-label"
+                                   for="is_optional">
+
+                                Optional Fee
+
+                            </label>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-3">
+
+                        <div class="form-check">
+
+                            <input type="checkbox"
+                                   name="is_refundable"
+                                   value="1"
+                                   class="form-check-input"
+                                   id="is_refundable"
+
+                                   {{ old(
+                                       'is_refundable',
+                                       $feeHead->is_refundable ?? false
+                                   ) ? 'checked' : '' }}>
+
+                            <label class="form-check-label"
+                                   for="is_refundable">
+
+                                Refundable
+
+                            </label>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-3">
+
+                        <div class="form-check">
+
+                            <input type="checkbox"
+                                   name="allow_concession"
+                                   value="1"
+                                   class="form-check-input"
+                                   id="allow_concession"
+
+                                   {{ old(
+                                       'allow_concession',
+                                       isset($feeHead)
+                                           ? $feeHead->allow_concession
+                                           : true
+                                   ) ? 'checked' : '' }}>
+
+                            <label class="form-check-label"
+                                   for="allow_concession">
+
+                                Allow Concession
+
+                            </label>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="col-md-3">
+
+                        <div class="form-check">
+
+                            <input type="checkbox"
+                                   name="allow_waiver"
+                                   value="1"
+                                   class="form-check-input"
+                                   id="allow_waiver"
+
+                                   {{ old(
+                                       'allow_waiver',
+                                       isset($feeHead)
+                                           ? $feeHead->allow_waiver
+                                           : true
+                                   ) ? 'checked' : '' }}>
+
+                            <label class="form-check-label"
+                                   for="allow_waiver">
+
+                                Allow Waiver
+
+                            </label>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
 
         </div>
 

@@ -127,4 +127,82 @@ class School extends Model
         return $this->hasMany(FeeHead::class);
     }
 
+    public function studentFeeAssignments()
+    {
+        return $this->hasMany(StudentFeeAssignment::class);
+    }
+
+    public function studentFeeDues()
+    {
+        return $this->hasMany(StudentFeeDue::class);
+    }
+
+    public function feeCollections()
+    {
+        return $this->hasMany(FeeCollection::class);
+    }
+
+    public function feeCycles()
+    {
+        return $this->hasMany(FeeCycle::class);
+    }   
+
+    public function feeComponentGroups()
+    {
+        return $this->hasMany(FeeComponentGroup::class);
+    }
+
+    public function miscFeeComponents()
+    {
+        return $this->hasMany(
+            MiscFeeComponent::class
+        );
+    }
+
+    public function banks()
+    {
+        return $this->hasMany(
+            BankMaster::class
+        );
+    }
+
+    public function schoolAccounts()
+    {
+        return $this->hasMany(
+            SchoolAccount::class
+        );
+    }
+
+    public function feeReceiptSchemes()
+    {
+        return $this->hasMany(
+            FeeReceiptScheme::class
+        );
+    }
+
+    public function lateFeeFineRules()
+    {
+        return $this->hasMany(
+            LateFeeFineRule::class
+        );
+    }
+
+    public function paymentModes()
+    {
+        return $this->hasMany(PaymentMode::class);
+    }
+
+    public function chequeBounceReasons()
+    {
+        return $this->hasMany(
+            ChequeBounceReason::class
+        );
+    }
+
+    public function feeCompileQueues()
+    {
+        return $this->hasMany(
+            FeeCompileQueue::class
+        );
+    }
 }

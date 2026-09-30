@@ -1,0 +1,82 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class StudentOptionalFeeAssignment extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'school_id',
+        'academic_year_id',
+        'student_id',
+        'student_enrollment_id',
+        'fee_head_id',
+        'assigned_date',
+        'effective_from',
+        'effective_to',
+        'amount',
+        'remarks',
+        'assigned_by',
+        'status',
+    ];
+
+    protected $casts = [
+        'assigned_date' => 'date',
+        'effective_from' => 'date',
+        'effective_to' => 'date',
+        'amount' => 'decimal:2',
+        'status' => 'boolean',
+    ];
+
+    public function school()
+    {
+        return $this->belongsTo(School::class);
+    }
+
+    public function academicYear()
+    {
+        return $this->belongsTo(
+            AcademicYear::class
+        );
+    }
+
+    public function student()
+    {
+        return $this->belongsTo(Student::class);
+    }
+
+    public function enrollment()
+    {
+        return $this->belongsTo(
+            StudentEnrollment::class,
+            'student_enrollment_id'
+        );
+    }
+
+    public function feeHead()
+    {
+        return $this->belongsTo(
+            FeeHead::class
+        );
+    }
+
+    public function assignedBy()
+    {
+        return $this->belongsTo(
+            User::class,
+            'assigned_by'
+        );
+    }
+
+    public function dues()
+    {
+        return $this->hasMany(
+            StudentFeeDue::class,
+            'student_optional_fee_assignment_id'
+        );
+    }
+}

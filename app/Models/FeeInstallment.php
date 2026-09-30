@@ -27,6 +27,7 @@ class FeeInstallment extends Model
         'period_end' => 'date',
         'due_date' => 'date',
         'amount' => 'decimal:2',
+        'sort_order' => 'integer',
         'status' => 'boolean',
     ];
 
@@ -37,18 +38,24 @@ class FeeInstallment extends Model
 
     public function feeStructure()
     {
-        return $this->belongsTo(FeeStructure::class);
+        return $this->belongsTo(
+            FeeStructure::class
+        );
     }
 
     public function feeStructureItem()
     {
-        return $this->belongsTo(FeeStructureItem::class);
+        return $this->belongsTo(
+            FeeStructureItem::class,
+            'fee_structure_item_id'
+        );
     }
 
-    public function installments()
+    public function studentDues()
     {
-        return $this->hasMany(FeeInstallment::class)
-            ->orderBy('sort_order')
-            ->orderBy('due_date');
+        return $this->hasMany(
+            StudentFeeDue::class,
+            'fee_installment_id'
+        );
     }
 }

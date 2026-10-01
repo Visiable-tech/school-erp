@@ -391,13 +391,13 @@
                     MASTERS
                 ====================================================== --}}
 
-                <a
+                <button
+                    type="button"
                     data-bs-toggle="collapse"
-                    href="#studentMastersMenu"
-                    role="button"
+                    data-bs-target="#studentMastersMenu"
                     aria-expanded="{{ $studentMastersOpen ? 'true' : 'false' }}"
                     aria-controls="studentMastersMenu"
-                    class="{{ $studentMastersOpen ? 'active' : '' }}"
+                    class="w-100 border-0 bg-transparent text-start d-flex align-items-center {{ $studentMastersOpen ? 'active' : '' }}"
                 >
 
                     <i class="bi bi-gear me-2"></i>
@@ -410,7 +410,7 @@
                         class="bi bi-chevron-down sidebar-arrow"
                     ></i>
 
-                </a>
+                </button>
 
 
                 <div
@@ -572,13 +572,13 @@
                     STUDENT MANAGEMENT
                 ====================================================== --}}
 
-                <a
+                <button
+                    type="button"
                     data-bs-toggle="collapse"
-                    href="#studentManagementMenu"
-                    role="button"
+                    data-bs-target="#studentManagementMenu"
                     aria-expanded="{{ $studentManagementOpen ? 'true' : 'false' }}"
                     aria-controls="studentManagementMenu"
-                    class="{{ $studentManagementOpen ? 'active' : '' }}"
+                    class="w-100 border-0 bg-transparent text-start d-flex align-items-center {{ $studentManagementOpen ? 'active' : '' }}"
                 >
 
                     <i class="bi bi-diagram-3 me-2"></i>
@@ -591,7 +591,7 @@
                         class="bi bi-chevron-down sidebar-arrow"
                     ></i>
 
-                </a>
+                </button>
 
 
                 <div
@@ -1039,13 +1039,13 @@
                         SETUP
                     ================================================== --}}
 
-                    <a
+                    <button
+                        type="button"
                         data-bs-toggle="collapse"
-                        href="#feeSetupMenu"
-                        role="button"
+                        data-bs-target="#feeSetupMenu"
                         aria-expanded="{{ $feeSetupOpen ? 'true' : 'false' }}"
                         aria-controls="feeSetupMenu"
-                        class="{{ $feeSetupOpen ? 'active' : '' }}"
+                        class="w-100 border-0 bg-transparent text-start d-flex align-items-center {{ $feeSetupOpen ? 'active' : '' }}"
                     >
 
                         <i class="bi bi-gear me-2"></i>
@@ -1056,7 +1056,7 @@
 
                         <i class="bi bi-chevron-down sidebar-arrow"></i>
 
-                    </a>
+                    </button>
 
 
                     <div
@@ -1351,13 +1351,13 @@
                         OPTIONAL ASSIGNMENTS
                     ================================================== --}}
 
-                    <a
+                    <button
+                        type="button"
                         data-bs-toggle="collapse"
-                        href="#feeOptionalMenu"
-                        role="button"
+                        data-bs-target="#feeOptionalMenu"
                         aria-expanded="{{ $feeOptionalOpen ? 'true' : 'false' }}"
                         aria-controls="feeOptionalMenu"
-                        class="{{ $feeOptionalOpen ? 'active' : '' }}"
+                        class="w-100 border-0 bg-transparent text-start d-flex align-items-center {{ $feeOptionalOpen ? 'active' : '' }}"
                     >
 
                         <i class="bi bi-sliders me-2"></i>
@@ -1368,7 +1368,7 @@
 
                         <i class="bi bi-chevron-down sidebar-arrow"></i>
 
-                    </a>
+                    </button>
 
 
                     <div
@@ -1508,13 +1508,13 @@
                         FEE COLLECTION
                     ================================================== --}}
 
-                    <a
+                    <button
+                        type="button"
                         data-bs-toggle="collapse"
-                        href="#feeCollectionMenu"
-                        role="button"
+                        data-bs-target="#feeCollectionMenu"
                         aria-expanded="{{ $feeCollectionOpen ? 'true' : 'false' }}"
                         aria-controls="feeCollectionMenu"
-                        class="{{ $feeCollectionOpen ? 'active' : '' }}"
+                        class="w-100 border-0 bg-transparent text-start d-flex align-items-center {{ $feeCollectionOpen ? 'active' : '' }}"
                     >
 
                         <i class="bi bi-currency-rupee me-2"></i>
@@ -1525,7 +1525,7 @@
 
                         <i class="bi bi-chevron-down sidebar-arrow"></i>
 
-                    </a>
+                    </button>
 
 
                     <div

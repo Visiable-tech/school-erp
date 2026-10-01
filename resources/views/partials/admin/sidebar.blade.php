@@ -1,3 +1,9 @@
+<style>
+    .sidebar-submenu > button { 
+color: #fff;
+    padding-left: 15px;
+}
+</style>    
 <aside
     class="admin-sidebar"
     id="adminSidebar">

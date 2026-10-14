@@ -329,7 +329,22 @@ class RolePermissionSeeder extends Seeder
             'admission-setup.view',
             'admission-setup.create',
             'admission-setup.edit',
-        ];
+
+
+            // Admission Candidates
+            'admission-candidate.view',
+            'admission-candidate.create',
+            'admission-candidate.edit',
+            'admission-candidate.status',
+
+            // Admission Form Sales
+            'admission-form-sale.view',
+            'admission-form-sale.create',
+            'admission-form-sale.edit',
+
+            // Admission Confirmations
+            'admission-confirmation.view',
+            'admission-confirmation.create',        ];
 
 
         /*
@@ -405,6 +420,28 @@ class RolePermissionSeeder extends Seeder
         | Clear Cache Again
         |--------------------------------------------------------------------------
         */
+
+        // Grant admission module access to existing Admin and Admission roles
+        // without removing their other permissions.
+        $admissionModulePermissions = [
+            'admission-candidate.view',
+            'admission-candidate.create',
+            'admission-candidate.edit',
+            'admission-candidate.status',
+            'admission-form-sale.view',
+            'admission-form-sale.create',
+            'admission-form-sale.edit',
+            'admission-confirmation.view',
+            'admission-confirmation.create',
+        ];
+
+        foreach (['Admin', 'Admission'] as $roleName) {
+            $role = Role::where('name', $roleName)
+                ->where('guard_name', 'web')
+                ->firstOrFail();
+
+            $role->givePermissionTo($admissionModulePermissions);
+        }
 
         app()[PermissionRegistrar::class]
             ->forgetCachedPermissions();

@@ -307,6 +307,28 @@ class RolePermissionSeeder extends Seeder
             'promotion-status.create',
             'promotion-status.edit',
             'promotion-status.delete',
+
+            'admission-board.view',
+            'admission-board.create',
+            'admission-board.edit',
+            'admission-board.delete',
+
+            'admission-communication-mode.view',
+            'admission-communication-mode.create',
+            'admission-communication-mode.edit',
+            'admission-communication-mode.delete',
+
+            'admission-information-source.view',
+            'admission-information-source.create',
+            'admission-information-source.edit',
+            'admission-information-source.delete',
+
+            'admission-number-scheme.view',
+            'admission-number-scheme.edit',
+
+            'admission-setup.view',
+            'admission-setup.create',
+            'admission-setup.edit',
         ];
 
 

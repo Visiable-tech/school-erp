@@ -20,6 +20,14 @@ use App\Http\Controllers\AdmissionFollowupController;
 use App\Http\Controllers\AdmissionApplicationController;
 use App\Http\Controllers\AdmissionApplicationDocumentController;
 use App\Http\Controllers\AdmissionApplicationReviewController;
+use App\Http\Controllers\AdmissionBoardController;
+use App\Http\Controllers\AdmissionCommunicationModeController;
+use App\Http\Controllers\AdmissionInformationSourceController;
+use App\Http\Controllers\AdmissionNumberSchemeController;
+use App\Http\Controllers\AdmissionSetupController;
+use App\Http\Controllers\AdmissionCandidateController;
+use App\Http\Controllers\AdmissionFormSaleController;
+
 
 use App\Http\Controllers\StudentAdmissionController;
 use App\Http\Controllers\StudentController;
@@ -67,6 +75,7 @@ use App\Http\Controllers\TransferCertificateController;
 use App\Http\Controllers\ManualTransferCertificateController;
 use App\Http\Controllers\TcRequestController;
 use App\Http\Controllers\StudentProfileModifyRequestController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -900,7 +909,48 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('permission:admission-application.reject')
         ->name('admission-applications.reject');
 
+    Route::get(
+        '/admission/masters/boards',
+        [AdmissionBoardController::class, 'index']
+    )
+        ->middleware('permission:admission-board.view')
+        ->name('admission-boards.index');
 
+    Route::get(
+        '/admission/masters/boards/create',
+        [AdmissionBoardController::class, 'create']
+    )
+        ->middleware('permission:admission-board.create')
+        ->name('admission-boards.create');
+
+    Route::post(
+        '/admission/masters/boards',
+        [AdmissionBoardController::class, 'store']
+    )
+        ->middleware('permission:admission-board.create')
+        ->name('admission-boards.store');
+
+    Route::get(
+        '/admission/masters/boards/{admissionBoard}/edit',
+        [AdmissionBoardController::class, 'edit']
+    )
+        ->middleware('permission:admission-board.edit')
+        ->name('admission-boards.edit');
+
+    Route::put(
+        '/admission/masters/boards/{admissionBoard}',
+        [AdmissionBoardController::class, 'update']
+    )
+        ->middleware('permission:admission-board.edit')
+        ->name('admission-boards.update');
+
+    Route::delete(
+        '/admission/masters/boards/{admissionBoard}',
+        [AdmissionBoardController::class, 'destroy']
+    )
+        ->middleware('permission:admission-board.delete')
+        ->name('admission-boards.destroy');
+        
     /*
     |--------------------------------------------------------------------------
     | APPLICATION -> STUDENT
@@ -3248,4 +3298,176 @@ Route::middleware(['auth'])->group(function () {
     )
     ->middleware('permission:promotion-status.delete')
     ->name('promotion-statuses.destroy');
+
+    Route::get(
+        '/admission/masters/communication-modes',
+        [AdmissionCommunicationModeController::class, 'index']
+    )
+        ->middleware('permission:admission-communication-mode.view')
+        ->name('admission-communication-modes.index');
+
+
+    Route::get(
+        '/admission/masters/communication-modes/create',
+        [AdmissionCommunicationModeController::class, 'create']
+    )
+        ->middleware('permission:admission-communication-mode.create')
+        ->name('admission-communication-modes.create');
+
+
+    Route::post(
+        '/admission/masters/communication-modes',
+        [AdmissionCommunicationModeController::class, 'store']
+    )
+        ->middleware('permission:admission-communication-mode.create')
+        ->name('admission-communication-modes.store');
+
+
+    Route::get(
+        '/admission/masters/communication-modes/{admissionCommunicationMode}/edit',
+        [AdmissionCommunicationModeController::class, 'edit']
+    )
+        ->middleware('permission:admission-communication-mode.edit')
+        ->name('admission-communication-modes.edit');
+
+
+    Route::put(
+        '/admission/masters/communication-modes/{admissionCommunicationMode}',
+        [AdmissionCommunicationModeController::class, 'update']
+    )
+        ->middleware('permission:admission-communication-mode.edit')
+        ->name('admission-communication-modes.update');
+
+
+    Route::delete(
+        '/admission/masters/communication-modes/{admissionCommunicationMode}',
+        [AdmissionCommunicationModeController::class, 'destroy']
+    )
+        ->middleware('permission:admission-communication-mode.delete')
+        ->name('admission-communication-modes.destroy');
+
+    Route::get(
+        '/admission/masters/information-sources',
+        [AdmissionInformationSourceController::class, 'index']
+    )->middleware('permission:admission-information-source.view')
+     ->name('admission-information-sources.index');
+
+    Route::get(
+        '/admission/masters/information-sources/create',
+        [AdmissionInformationSourceController::class, 'create']
+    )->middleware('permission:admission-information-source.create')
+     ->name('admission-information-sources.create');
+
+    Route::post(
+        '/admission/masters/information-sources',
+        [AdmissionInformationSourceController::class, 'store']
+    )->middleware('permission:admission-information-source.create')
+     ->name('admission-information-sources.store');
+
+    Route::get(
+        '/admission/masters/information-sources/{admissionInformationSource}/edit',
+        [AdmissionInformationSourceController::class, 'edit']
+    )->middleware('permission:admission-information-source.edit')
+     ->name('admission-information-sources.edit');
+
+    Route::put(
+        '/admission/masters/information-sources/{admissionInformationSource}',
+        [AdmissionInformationSourceController::class, 'update']
+    )->middleware('permission:admission-information-source.edit')
+     ->name('admission-information-sources.update');
+
+    Route::delete(
+        '/admission/masters/information-sources/{admissionInformationSource}',
+        [AdmissionInformationSourceController::class, 'destroy']
+    )->middleware('permission:admission-information-source.delete')
+     ->name('admission-information-sources.destroy');  
+     
+     Route::get(
+        '/admission/setup/number-schemes',
+        [AdmissionNumberSchemeController::class, 'index']
+    )
+        ->middleware('permission:admission-number-scheme.view')
+        ->name('admission-number-schemes.index');
+
+    Route::get(
+        '/admission/setup/number-schemes/{id}/edit',
+        [AdmissionNumberSchemeController::class, 'edit']
+    )
+        ->middleware('permission:admission-number-scheme.edit')
+        ->name('admission-number-schemes.edit');
+
+    Route::put(
+        '/admission/setup/number-schemes/{id}',
+        [AdmissionNumberSchemeController::class, 'update']
+    )
+        ->middleware('permission:admission-number-scheme.edit')
+        ->name('admission-number-schemes.update');
+
+    Route::get(
+        '/admission/setup/class-wise', 
+        [AdmissionSetupController::class, 'index']
+    )
+        ->middleware('permission:admission-setup.view')
+        ->name('admission-setups.index');
+
+    Route::post(
+        '/admission/setup/class-wise/initiate', 
+        [AdmissionSetupController::class, 'initiate']
+    )
+        ->middleware('permission:admission-setup.create')
+        ->name('admission-setups.initiate');
+
+    Route::get(
+        '/admission/setup/class-wise/{admissionSetup}/edit', 
+        [AdmissionSetupController::class, 'edit']
+    )
+        ->middleware('permission:admission-setup.edit')
+        ->name('admission-setups.edit');
+    
+    Route::put(
+        '/admission/setup/class-wise/{admissionSetup}', 
+        [AdmissionSetupController::class, 'update']
+    )
+        ->middleware('permission:admission-setup.edit')
+        ->name('admission-setups.update'); 
+        
+    Route::get('/admission/candidates', [AdmissionCandidateController::class, 'index'])
+        ->middleware('permission:admission-candidate.view')
+        ->name('admission-candidates.index');
+
+    Route::get('/admission/candidates/create', [AdmissionCandidateController::class, 'create'])
+        ->middleware('permission:admission-candidate.create')
+        ->name('admission-candidates.create');
+
+    Route::post('/admission/candidates', [AdmissionCandidateController::class, 'store'])
+        ->middleware('permission:admission-candidate.create')
+        ->name('admission-candidates.store');
+
+    Route::get('/admission/candidates/{candidate}/edit', [AdmissionCandidateController::class, 'edit'])
+        ->middleware('permission:admission-candidate.edit')
+        ->name('admission-candidates.edit');
+
+    Route::put('/admission/admission/candidates/{candidate}', [AdmissionCandidateController::class, 'update'])
+        ->middleware('permission:admission-candidate.edit')
+        ->name('admission-candidates.update');
+
+    Route::get('/admission/candidates/{candidate}/status-track', [AdmissionCandidateController::class, 'track'])
+        ->middleware('permission:admission-candidate.view')
+        ->name('admission-candidates.track');
+
+    Route::delete('/admission/candidates/{candidate}', [AdmissionCandidateController::class, 'destroy'])
+        ->middleware('permission:admission-candidate.delete')
+        ->name('admission-candidates.destroy');
+
+});
+
+
+Route::middleware('auth')->prefix('admission')->group(function () {
+ Route::get('form-sales', [AdmissionFormSaleController::class,'index'])->middleware('permission:admission-form-sale.view')->name('admission-form-sales.index');
+ Route::get('form-sales/create', [AdmissionFormSaleController::class,'create'])->middleware('permission:admission-form-sale.create')->name('admission-form-sales.create');
+ Route::post('form-sales', [AdmissionFormSaleController::class,'store'])->middleware('permission:admission-form-sale.create')->name('admission-form-sales.store');
+ Route::get('form-sales/export', [AdmissionFormSaleController::class,'export'])->middleware('permission:admission-form-sale.view')->name('admission-form-sales.export');
+ Route::post('form-sales/bulk', [AdmissionFormSaleController::class,'bulk'])->middleware('permission:admission-form-sale.edit')->name('admission-form-sales.bulk');
+ Route::get('form-sales/{sale}/edit', [AdmissionFormSaleController::class,'edit'])->middleware('permission:admission-form-sale.edit')->name('admission-form-sales.edit');
+ Route::put('form-sales/{sale}', [AdmissionFormSaleController::class,'update'])->middleware('permission:admission-form-sale.edit')->name('admission-form-sales.update');
 });

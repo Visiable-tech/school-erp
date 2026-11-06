@@ -13,6 +13,7 @@ class StudentImage extends Model
     public const TYPE_FATHER = 'father';
     public const TYPE_MOTHER = 'mother';
     public const TYPE_GUARDIAN = 'guardian';
+    public const TYPE_PARENTS = 'parents';
     public const TYPE_GLIMPSE_MYSELF = 'glimpse_myself';
     public const TYPE_GLIMPSE_FAMILY = 'glimpse_family';
     public const TYPE_LEARNER_PORTFOLIO = 'learner_portfolio';
@@ -32,6 +33,7 @@ class StudentImage extends Model
             self::TYPE_FATHER,
             self::TYPE_MOTHER,
             self::TYPE_GUARDIAN,
+            self::TYPE_PARENTS,
             self::TYPE_GLIMPSE_MYSELF,
             self::TYPE_GLIMPSE_FAMILY,
             self::TYPE_LEARNER_PORTFOLIO,

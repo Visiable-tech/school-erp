@@ -22,9 +22,7 @@
 
                 <div class="card-body p-4">
 
-                    <h3 class="text-center mb-4">
-                        School ERP
-                    </h3>
+                    <img src="/assets/images/logo.png" style="width:100%;">
 
                     @if($errors->any())
 

@@ -37,6 +37,7 @@ use App\Http\Controllers\DirectStudentAdmissionController;
 use App\Http\Controllers\StudentImportController;
 use App\Http\Controllers\StudentDocumentController;
 use App\Http\Controllers\StudentAttendanceController;
+use App\Http\Controllers\StudentInformationDashboardController;
 
 use App\Http\Controllers\FeeHeadController;
 use App\Http\Controllers\FeeStructureController;
@@ -76,6 +77,27 @@ use App\Http\Controllers\ManualTransferCertificateController;
 use App\Http\Controllers\TcRequestController;
 use App\Http\Controllers\StudentProfileModifyRequestController;
 
+use App\Http\Controllers\TeacherPortalController;
+use App\Http\Controllers\TeacherAssignmentController;
+use App\Http\Controllers\TeacherAttendanceController;
+use App\Http\Controllers\TeacherAttendanceReportController;
+use App\Http\Controllers\TeacherPeriodAttendanceController;
+use App\Http\Controllers\TeacherStudentLeaveController;
+use App\Http\Controllers\TeacherClassworkController;
+use App\Http\Controllers\TeacherExaminationController;
+use App\Http\Controllers\TeacherExaminationExtensionController;
+use App\Http\Controllers\TeacherCommunicationController;
+use App\Http\Controllers\TeacherLibraryController;
+use App\Http\Controllers\TeacherStaffAttendanceController;
+use App\Http\Controllers\TeacherPayrollExtensionController;
+use App\Http\Controllers\TeacherPerformanceController;
+use App\Http\Controllers\TeacherOperationsController;
+use App\Http\Controllers\ModuleDashboardController;
+
+
+use App\Http\Controllers\HrPayrollMasterController;
+use App\Http\Controllers\HrPayrollProcessingController;
+use App\Http\Controllers\HrAttendancePhase3Controller;
 
 /*
 |--------------------------------------------------------------------------
@@ -91,6 +113,10 @@ Route::get('/', function () {
 
 });
 
+
+Route::middleware(['auth'])->get('/all-modules', function () {
+    return view('modules');
+})->name('modules.index');
 
 /*
 |--------------------------------------------------------------------------
@@ -956,7 +982,11 @@ Route::middleware(['auth'])->group(function () {
     | APPLICATION -> STUDENT
     |--------------------------------------------------------------------------
     */
+    Route::middleware('auth')->get('/student-information/dashboard',
+    [StudentInformationDashboardController::class, 'index'])
+    ->name('student-information.dashboard');
 
+    
     Route::get(
         '/admission-applications/{admissionApplication}/admit',
         [StudentAdmissionController::class, 'create']
@@ -3471,3 +3501,193 @@ Route::middleware('auth')->prefix('admission')->group(function () {
  Route::get('form-sales/{sale}/edit', [AdmissionFormSaleController::class,'edit'])->middleware('permission:admission-form-sale.edit')->name('admission-form-sales.edit');
  Route::put('form-sales/{sale}', [AdmissionFormSaleController::class,'update'])->middleware('permission:admission-form-sale.edit')->name('admission-form-sales.update');
 });
+
+
+Route::middleware(['auth','role:Teacher|Super Admin'])->prefix('teacher')->name('teacher.')->group(function () {
+    Route::get('/dashboard', [TeacherPortalController::class,'dashboard'])->name('dashboard');
+    Route::get('/profile', [TeacherPortalController::class,'profile'])->name('profile');
+    Route::get('/students', [TeacherPortalController::class,'students'])->name('students');
+
+    Route::get('/attendance',[TeacherAttendanceController::class,'index'])->name('attendance.index');
+    Route::post('/attendance',[TeacherAttendanceController::class,'store'])->name('attendance.store');
+    Route::get('/attendance/monthly-report',[TeacherAttendanceController::class,'report'])->name('attendance.report');
+
+    Route::get('/attendance/reports/{report}',[TeacherAttendanceReportController::class,'index'])
+        ->where('report','detail|percentage|absentees')->name('attendance.reports');
+
+    Route::get('period-attendance',[TeacherPeriodAttendanceController::class,'index'])->name('period-attendance.index');
+    Route::post('period-attendance',[TeacherPeriodAttendanceController::class,'store'])->name('period-attendance.store');
+    Route::get('student-leaves',[TeacherStudentLeaveController::class,'index'])->name('student-leaves.index');
+    Route::post('student-leaves',[TeacherStudentLeaveController::class,'store'])->name('student-leaves.store');
+    Route::patch('student-leaves/{leave}/review',[TeacherStudentLeaveController::class,'review'])->name('student-leaves.review');    
+    
+});
+
+
+Route::middleware(['auth'])->prefix('teacher-management')->group(function () {
+    Route::get('/assignments', [TeacherAssignmentController::class,'index'])->middleware('permission:teacher-assignment.view')->name('teacher-assignments.index');
+    Route::get('/assignments/create', [TeacherAssignmentController::class,'create'])->middleware('permission:teacher-assignment.create')->name('teacher-assignments.create');
+    Route::post('/assignments', [TeacherAssignmentController::class,'store'])->middleware('permission:teacher-assignment.create')->name('teacher-assignments.store');
+    Route::get('/assignments/{assignment}/edit', [TeacherAssignmentController::class,'edit'])->middleware('permission:teacher-assignment.edit')->name('teacher-assignments.edit');
+    Route::put('/assignments/{assignment}', [TeacherAssignmentController::class,'update'])->middleware('permission:teacher-assignment.edit')->name('teacher-assignments.update');
+    Route::delete('/assignments/{assignment}', [TeacherAssignmentController::class,'destroy'])->middleware('permission:teacher-assignment.delete')->name('teacher-assignments.destroy');
+});
+
+Route::middleware(['auth'])->prefix('teacher/classwork')->name('teacher.classwork.')->group(function () {
+ Route::get('/',[TeacherClassworkController::class,'index'])->middleware('role:Teacher|Super Admin|Admin')->name('index');
+ Route::get('/create',[TeacherClassworkController::class,'create'])->middleware('role:Teacher|Super Admin')->name('create');
+ Route::post('/',[TeacherClassworkController::class,'store'])->middleware('role:Teacher|Super Admin')->name('store');
+ Route::get('/{classwork}/edit',[TeacherClassworkController::class,'edit'])->middleware('role:Teacher|Super Admin')->name('edit');
+ Route::put('/{classwork}',[TeacherClassworkController::class,'update'])->middleware('role:Teacher|Super Admin')->name('update');
+ Route::patch('/{classwork}/review',[TeacherClassworkController::class,'review'])->middleware('permission:teacher-classwork.review')->name('review');
+});
+
+Route::middleware(['auth','role:Teacher|Super Admin|Admin'])->prefix('teacher/examination')->name('teacher.examination.')->group(function(){
+ Route::get('/',[TeacherExaminationController::class,'index'])->name('index');
+ Route::get('/create',[TeacherExaminationController::class,'create'])->name('create');
+ Route::post('/',[TeacherExaminationController::class,'store'])->name('store');
+ Route::get('/remarks',[TeacherExaminationController::class,'remarks'])->name('remarks');
+ Route::post('/remarks',[TeacherExaminationController::class,'saveRemarks'])->name('remarks.save');
+ Route::get('/{id}/marks',[TeacherExaminationController::class,'marks'])->whereNumber('id')->name('marks');
+ Route::post('/{id}/marks',[TeacherExaminationController::class,'saveMarks'])->whereNumber('id')->name('marks.save');
+});
+
+
+Route::middleware(['auth','role:Teacher|Super Admin|Admin'])->prefix('teacher/examination')->name('teacher.examination.')->group(function(){
+ Route::get('/health',[TeacherExaminationExtensionController::class,'health'])->name('health');
+ Route::post('/health',[TeacherExaminationExtensionController::class,'saveHealth'])->name('health.save');
+ Route::get('/skills',[TeacherExaminationExtensionController::class,'skills'])->name('skills');
+ Route::post('/skills/add',[TeacherExaminationExtensionController::class,'addSkill'])->name('skills.add');
+ Route::post('/skills/save',[TeacherExaminationExtensionController::class,'saveSkills'])->name('skills.save');
+ Route::get('/student-reports',[TeacherExaminationExtensionController::class,'reports'])->name('student-reports');
+});
+
+Route::middleware(['auth','role:Teacher|Super Admin|Admin'])->prefix('teacher/communication')
+ ->name('teacher.communication.')->group(function(){
+  Route::get('/inbox',[TeacherCommunicationController::class,'inbox'])->name('inbox');
+  Route::get('/sent',[TeacherCommunicationController::class,'sent'])->name('sent');
+  Route::get('/compose',[TeacherCommunicationController::class,'compose'])->name('compose');
+  Route::post('/send',[TeacherCommunicationController::class,'send'])->name('send');
+  Route::get('/message/{message}',[TeacherCommunicationController::class,'showMessage'])->whereNumber('message')->name('message');
+  Route::get('/notices/{type}',[TeacherCommunicationController::class,'notices'])->where('type','circular|broadcast|newsletter')->name('notices');
+  Route::get('/notices/{type}/create',[TeacherCommunicationController::class,'createNotice'])->where('type','circular|broadcast|newsletter')->name('notices.create');
+  Route::post('/notices/{type}',[TeacherCommunicationController::class,'storeNotice'])->where('type','circular|broadcast|newsletter')->name('notices.store');
+  Route::get('/remarks',[TeacherCommunicationController::class,'remarks'])->name('remarks');
+  Route::post('/remarks',[TeacherCommunicationController::class,'storeRemark'])->name('remarks.store');
+ });
+
+Route::middleware(['auth','role:Teacher|Admin|Super Admin'])
+ ->prefix('teacher/library')->name('teacher.library.')->group(function(){
+  Route::get('/search',[TeacherLibraryController::class,'search'])->name('search');
+  Route::get('/issued',[TeacherLibraryController::class,'issued'])->name('issued');
+  Route::get('/history',[TeacherLibraryController::class,'history'])->name('history');
+  Route::get('/catalog',[TeacherLibraryController::class,'catalog'])->name('catalog');
+  Route::post('/catalog',[TeacherLibraryController::class,'storeBook'])->name('catalog.store');
+  Route::get('/issue',[TeacherLibraryController::class,'issueForm'])->name('issue');
+  Route::post('/issue',[TeacherLibraryController::class,'issue'])->name('issue.store');
+  Route::post('/return/{loan}',[TeacherLibraryController::class,'returnBook'])->whereNumber('loan')->name('return');
+ });
+
+
+ Route::middleware(['auth','role:Teacher|Admin|Super Admin'])->prefix('teacher/staff-attendance')
+ ->name('teacher.staff-attendance.')->group(function(){
+  Route::get('/daily',[TeacherStaffAttendanceController::class,'daily'])->name('daily');
+  Route::post('/daily',[TeacherStaffAttendanceController::class,'mark'])->name('daily.mark');
+  Route::get('/monthly',[TeacherStaffAttendanceController::class,'monthly'])->name('monthly');
+  Route::get('/leaves',[TeacherStaffAttendanceController::class,'leaves'])->name('leaves');
+  Route::post('/leaves',[TeacherStaffAttendanceController::class,'requestLeave'])->name('leaves.store');
+  Route::get('/changes',[TeacherStaffAttendanceController::class,'changes'])->name('changes');
+  Route::post('/changes',[TeacherStaffAttendanceController::class,'requestChange'])->name('changes.store');
+  Route::post('/review/{kind}/{id}',[TeacherStaffAttendanceController::class,'review'])
+   ->where(['kind'=>'leave|change','id'=>'[0-9]+'])->name('review');
+ });
+
+ Route::middleware(['auth','role:Teacher|Admin|Super Admin'])->prefix('teacher/payroll')
+ ->name('teacher.payroll.')->group(function(){
+  Route::get('/balances',[TeacherPayrollExtensionController::class,'balances'])->name('balances');
+  Route::post('/balances',[TeacherPayrollExtensionController::class,'saveEntitlement'])->name('balances.store');
+  Route::get('/investments',[TeacherPayrollExtensionController::class,'investments'])->name('investments');
+  Route::post('/investments',[TeacherPayrollExtensionController::class,'saveInvestment'])->name('investments.store');
+  Route::get('/resignations',[TeacherPayrollExtensionController::class,'resignations'])->name('resignations');
+  Route::post('/resignations',[TeacherPayrollExtensionController::class,'saveResignation'])->name('resignations.store');
+  Route::post('/review/{kind}/{id}',[TeacherPayrollExtensionController::class,'review'])
+   ->where(['kind'=>'investment|resignation','id'=>'[0-9]+'])->name('review');
+  Route::get('/summary',[TeacherPayrollExtensionController::class,'summary'])->name('summary');
+ });
+
+Route::middleware(['auth','role:Teacher|Admin|Super Admin'])->prefix('teacher/performance')
+ ->name('teacher.performance.')->group(function(){
+  Route::get('/self',[TeacherPerformanceController::class,'selfIndex'])->name('self');
+  Route::get('/team',[TeacherPerformanceController::class,'teamIndex'])->name('team');
+  Route::get('/create/{type}',[TeacherPerformanceController::class,'create'])->where('type','self|team')->name('create');
+  Route::post('/create/{type}',[TeacherPerformanceController::class,'store'])->where('type','self|team')->name('store');
+  Route::get('/review/{review}',[TeacherPerformanceController::class,'show'])->whereNumber('review')->name('show');
+  Route::post('/review/{review}',[TeacherPerformanceController::class,'review'])->whereNumber('review')->name('review');
+ });
+
+
+ Route::middleware(['auth','role:Teacher|Admin|Super Admin'])->prefix('teacher/operations')->name('teacher.operations.')->group(function(){
+ Route::get('/gallery',[TeacherOperationsController::class,'gallery'])->name('gallery');
+ Route::post('/gallery',[TeacherOperationsController::class,'upload'])->name('gallery.upload');
+ Route::delete('/gallery/{id}',[TeacherOperationsController::class,'deleteImage'])->whereNumber('id')->name('gallery.delete');
+ Route::get('/inventory',[TeacherOperationsController::class,'inventory'])->name('inventory');
+ Route::post('/inventory/items',[TeacherOperationsController::class,'addItem'])->name('inventory.items');
+ Route::post('/inventory/requests',[TeacherOperationsController::class,'requestItem'])->name('inventory.request');
+ Route::post('/inventory/requests/{id}/review',[TeacherOperationsController::class,'reviewItem'])->whereNumber('id')->name('inventory.review');
+ Route::get('/tickets',[TeacherOperationsController::class,'tickets'])->name('tickets');
+ Route::post('/tickets',[TeacherOperationsController::class,'createTicket'])->name('tickets.store');
+ Route::post('/tickets/{id}',[TeacherOperationsController::class,'updateTicket'])->whereNumber('id')->name('tickets.update');
+});
+
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/admission/dashboard', [ModuleDashboardController::class, 'admission'])
+        ->name('admission.dashboard');
+    /*Route::get('/student-information/dashboard', [ModuleDashboardController::class, 'students'])
+        ->name('student-information.dashboard');*/
+});
+
+
+Route::middleware(['auth','role:Admin|Super Admin'])->prefix('hr-payroll')
+ ->name('hr-payroll.')->group(function(){
+  Route::get('/masters/{category}',[HrPayrollMasterController::class,'index'])->name('masters.index');
+  Route::get('/masters/{category}/create',[HrPayrollMasterController::class,'create'])->name('masters.create');
+  Route::post('/masters/{category}',[HrPayrollMasterController::class,'store'])->name('masters.store');
+  Route::get('/masters/{category}/{id}/edit',[HrPayrollMasterController::class,'edit'])->whereNumber('id')->name('masters.edit');
+  Route::put('/masters/{category}/{id}',[HrPayrollMasterController::class,'update'])->whereNumber('id')->name('masters.update');
+  Route::delete('/masters/{category}/{id}',[HrPayrollMasterController::class,'destroy'])->whereNumber('id')->name('masters.destroy');
+ });
+
+Route::middleware(['auth'])->prefix('hr-payroll/processing')->name('hr-payroll.processing.')->group(function(){
+ Route::get('/payslips',[HrPayrollProcessingController::class,'slips'])->name('slips');
+ Route::get('/payslips/{id}',[HrPayrollProcessingController::class,'showSlip'])->whereNumber('id')->name('slips.show');
+ Route::middleware('role:Admin|Super Admin')->group(function(){
+  Route::get('/profiles',[HrPayrollProcessingController::class,'profiles'])->name('profiles');
+  Route::post('/profiles',[HrPayrollProcessingController::class,'saveProfile'])->name('profiles.save');
+  Route::get('/advances',[HrPayrollProcessingController::class,'advances'])->name('advances');
+  Route::post('/advances',[HrPayrollProcessingController::class,'saveAdvance'])->name('advances.save');
+  Route::post('/advances/{id}/review',[HrPayrollProcessingController::class,'reviewAdvance'])->whereNumber('id')->name('advances.review');
+  Route::get('/adjustments',[HrPayrollProcessingController::class,'adjustments'])->name('adjustments');
+  Route::post('/adjustments',[HrPayrollProcessingController::class,'saveAdjustment'])->name('adjustments.save');
+  Route::delete('/adjustments/{id}',[HrPayrollProcessingController::class,'deleteAdjustment'])->whereNumber('id')->name('adjustments.delete');
+  Route::get('/runs',[HrPayrollProcessingController::class,'runs'])->name('runs');
+  Route::post('/runs',[HrPayrollProcessingController::class,'generate'])->name('runs.generate');
+  Route::post('/runs/{id}/finalize',[HrPayrollProcessingController::class,'finalize'])->whereNumber('id')->name('runs.finalize');
+ });
+});
+
+
+Route::middleware(['auth','role:Admin|Super Admin'])->prefix('hr-payroll/attendance')
+ ->name('hr-payroll.attendance.')->group(function(){
+  Route::get('/daily',[HrAttendancePhase3Controller::class,'attendance'])->name('daily');
+  Route::post('/daily',[HrAttendancePhase3Controller::class,'saveAttendance'])->name('daily.store');
+  Route::get('/shifts',[HrAttendancePhase3Controller::class,'shifts'])->name('shifts');
+  Route::post('/shifts',[HrAttendancePhase3Controller::class,'saveShift'])->name('shifts.store');
+  Route::get('/overtime',[HrAttendancePhase3Controller::class,'overtime'])->name('overtime');
+  Route::get('/paid-days',[HrAttendancePhase3Controller::class,'paidDays'])->name('paid-days');
+  Route::post('/paid-days/calculate',[HrAttendancePhase3Controller::class,'calculatePaidDays'])->name('paid-days.calculate');
+  Route::post('/paid-days/override',[HrAttendancePhase3Controller::class,'overridePaidDays'])->name('paid-days.override');
+ });
+
+
+

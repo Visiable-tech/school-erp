@@ -38,6 +38,7 @@
 <form
     action="{{ route('students.store') }}"
     method="POST"
+    enctype="multipart/form-data"
 >
 
 @csrf
@@ -349,6 +350,15 @@
                 >
             </div>
 
+            <div class="col-md-3">
+                <label for="photo_student" class="form-label">Student Photo</label>
+                <div class="border rounded p-2 text-center bg-light">
+                <img id="preview_student" alt="Student Photo preview" style="height:115px;max-width:100%;object-fit:cover;display:none" class="rounded mb-2">
+                <input id="photo_student" class="form-control form-control-sm" type="file" name="photos[student]" accept="image/jpeg,image/png,image/webp" data-photo-preview="preview_student">
+                </div>
+                @error('photos.student')<div class="text-danger small">{{ $message }}</div>@enderror
+            </div>
+
         </div>
 
     </div>
@@ -391,6 +401,66 @@
                 </div>
 
             @endforeach
+<!-- Additional father details -->
+<div class="col-md-3">
+    <label class="form-label" for="father_aadhaar_last4">Aadhaar Last 4 Digits</label>
+    <input class="form-control @error('father_aadhaar_last4') is-invalid @enderror" type="text" name="father_aadhaar_last4" id="father_aadhaar_last4" value="{{ old('father_aadhaar_last4', '') }}" maxlength="4" inputmode="numeric" pattern="[0-9]{4}">
+    @error('father_aadhaar_last4')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="father_nationality">Nationality</label>
+    <input class="form-control @error('father_nationality') is-invalid @enderror" type="text" name="father_nationality" id="father_nationality" value="{{ old('father_nationality', 'Indian') }}" maxlength="255">
+    @error('father_nationality')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="father_qualification">Educational Qualification</label>
+    <input class="form-control @error('father_qualification') is-invalid @enderror" type="text" name="father_qualification" id="father_qualification" value="{{ old('father_qualification', '') }}" maxlength="255">
+    @error('father_qualification')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="father_organization">Organization / Workplace</label>
+    <input class="form-control @error('father_organization') is-invalid @enderror" type="text" name="father_organization" id="father_organization" value="{{ old('father_organization', '') }}" maxlength="255">
+    @error('father_organization')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="father_work_address">Work Address</label>
+    <input class="form-control @error('father_work_address') is-invalid @enderror" type="text" name="father_work_address" id="father_work_address" value="{{ old('father_work_address', '') }}" maxlength="255">
+    @error('father_work_address')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="father_address">Residential Address</label>
+    <input class="form-control @error('father_address') is-invalid @enderror" type="text" name="father_address" id="father_address" value="{{ old('father_address', '') }}" maxlength="255">
+    @error('father_address')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="father_city">City</label>
+    <input class="form-control @error('father_city') is-invalid @enderror" type="text" name="father_city" id="father_city" value="{{ old('father_city', '') }}" maxlength="255">
+    @error('father_city')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="father_state">State</label>
+    <input class="form-control @error('father_state') is-invalid @enderror" type="text" name="father_state" id="father_state" value="{{ old('father_state', '') }}" maxlength="255">
+    @error('father_state')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="father_pin_code">PIN Code</label>
+    <input class="form-control @error('father_pin_code') is-invalid @enderror" type="text" name="father_pin_code" id="father_pin_code" value="{{ old('father_pin_code', '') }}" maxlength="255">
+    @error('father_pin_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="father_alternate_mobile">Alternate Mobile</label>
+    <input class="form-control @error('father_alternate_mobile') is-invalid @enderror" type="tel" name="father_alternate_mobile" id="father_alternate_mobile" value="{{ old('father_alternate_mobile', '') }}" maxlength="255">
+    @error('father_alternate_mobile')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+
+<div class="col-md-3">
+        <label for="photo_father" class="form-label">Father Photo</label>
+        <div class="border rounded p-2 text-center bg-light">
+          <img id="preview_father" alt="Father Photo preview" style="height:115px;max-width:100%;object-fit:cover;display:none" class="rounded mb-2">
+          <input id="photo_father" class="form-control form-control-sm" type="file" name="photos[father]" accept="image/jpeg,image/png,image/webp" data-photo-preview="preview_father">
+        </div>
+        @error('photos.father')<div class="text-danger small">{{ $message }}</div>@enderror
+      </div>
 
         </div>
 
@@ -434,6 +504,67 @@
                 </div>
 
             @endforeach
+<!-- Additional mother details -->
+<div class="col-md-3">
+    <label class="form-label" for="mother_aadhaar_last4">Aadhaar Last 4 Digits</label>
+    <input class="form-control @error('mother_aadhaar_last4') is-invalid @enderror" type="text" name="mother_aadhaar_last4" id="mother_aadhaar_last4" value="{{ old('mother_aadhaar_last4', '') }}" maxlength="4" inputmode="numeric" pattern="[0-9]{4}">
+    @error('mother_aadhaar_last4')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="mother_nationality">Nationality</label>
+    <input class="form-control @error('mother_nationality') is-invalid @enderror" type="text" name="mother_nationality" id="mother_nationality" value="{{ old('mother_nationality', 'Indian') }}" maxlength="255">
+    @error('mother_nationality')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="mother_qualification">Educational Qualification</label>
+    <input class="form-control @error('mother_qualification') is-invalid @enderror" type="text" name="mother_qualification" id="mother_qualification" value="{{ old('mother_qualification', '') }}" maxlength="255">
+    @error('mother_qualification')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="mother_organization">Organization / Workplace</label>
+    <input class="form-control @error('mother_organization') is-invalid @enderror" type="text" name="mother_organization" id="mother_organization" value="{{ old('mother_organization', '') }}" maxlength="255">
+    @error('mother_organization')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="mother_work_address">Work Address</label>
+    <input class="form-control @error('mother_work_address') is-invalid @enderror" type="text" name="mother_work_address" id="mother_work_address" value="{{ old('mother_work_address', '') }}" maxlength="255">
+    @error('mother_work_address')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="mother_address">Residential Address</label>
+    <input class="form-control @error('mother_address') is-invalid @enderror" type="text" name="mother_address" id="mother_address" value="{{ old('mother_address', '') }}" maxlength="255">
+    @error('mother_address')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="mother_city">City</label>
+    <input class="form-control @error('mother_city') is-invalid @enderror" type="text" name="mother_city" id="mother_city" value="{{ old('mother_city', '') }}" maxlength="255">
+    @error('mother_city')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="mother_state">State</label>
+    <input class="form-control @error('mother_state') is-invalid @enderror" type="text" name="mother_state" id="mother_state" value="{{ old('mother_state', '') }}" maxlength="255">
+    @error('mother_state')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="mother_pin_code">PIN Code</label>
+    <input class="form-control @error('mother_pin_code') is-invalid @enderror" type="text" name="mother_pin_code" id="mother_pin_code" value="{{ old('mother_pin_code', '') }}" maxlength="255">
+    @error('mother_pin_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="mother_alternate_mobile">Alternate Mobile</label>
+    <input class="form-control @error('mother_alternate_mobile') is-invalid @enderror" type="tel" name="mother_alternate_mobile" id="mother_alternate_mobile" value="{{ old('mother_alternate_mobile', '') }}" maxlength="255">
+    @error('mother_alternate_mobile')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+
+
+<div class="col-md-3">
+        <label for="photo_mother" class="form-label">Mother Photo</label>
+        <div class="border rounded p-2 text-center bg-light">
+          <img id="preview_mother" alt="Mother Photo preview" style="height:115px;max-width:100%;object-fit:cover;display:none" class="rounded mb-2">
+          <input id="photo_mother" class="form-control form-control-sm" type="file" name="photos[mother]" accept="image/jpeg,image/png,image/webp" data-photo-preview="preview_mother">
+        </div>
+        @error('photos.mother')<div class="text-danger small">{{ $message }}</div>@enderror
+      </div>
 
         </div>
 
@@ -486,6 +617,66 @@
                     class="form-control"
                 >
             </div>
+<!-- Additional guardian details -->
+<div class="col-md-3">
+    <label class="form-label" for="guardian_aadhaar_last4">Aadhaar Last 4 Digits</label>
+    <input class="form-control @error('guardian_aadhaar_last4') is-invalid @enderror" type="text" name="guardian_aadhaar_last4" id="guardian_aadhaar_last4" value="{{ old('guardian_aadhaar_last4', '') }}" maxlength="4" inputmode="numeric" pattern="[0-9]{4}">
+    @error('guardian_aadhaar_last4')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="guardian_nationality">Nationality</label>
+    <input class="form-control @error('guardian_nationality') is-invalid @enderror" type="text" name="guardian_nationality" id="guardian_nationality" value="{{ old('guardian_nationality', 'Indian') }}" maxlength="255">
+    @error('guardian_nationality')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="guardian_occupation">Occupation</label>
+    <input class="form-control @error('guardian_occupation') is-invalid @enderror" type="text" name="guardian_occupation" id="guardian_occupation" value="{{ old('guardian_occupation', '') }}" maxlength="255">
+    @error('guardian_occupation')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="guardian_email">Email</label>
+    <input class="form-control @error('guardian_email') is-invalid @enderror" type="email" name="guardian_email" id="guardian_email" value="{{ old('guardian_email', '') }}" maxlength="255">
+    @error('guardian_email')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="guardian_qualification">Educational Qualification</label>
+    <input class="form-control @error('guardian_qualification') is-invalid @enderror" type="text" name="guardian_qualification" id="guardian_qualification" value="{{ old('guardian_qualification', '') }}" maxlength="255">
+    @error('guardian_qualification')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="guardian_address">Residential Address</label>
+    <input class="form-control @error('guardian_address') is-invalid @enderror" type="text" name="guardian_address" id="guardian_address" value="{{ old('guardian_address', '') }}" maxlength="255">
+    @error('guardian_address')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="guardian_city">City</label>
+    <input class="form-control @error('guardian_city') is-invalid @enderror" type="text" name="guardian_city" id="guardian_city" value="{{ old('guardian_city', '') }}" maxlength="255">
+    @error('guardian_city')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="guardian_state">State</label>
+    <input class="form-control @error('guardian_state') is-invalid @enderror" type="text" name="guardian_state" id="guardian_state" value="{{ old('guardian_state', '') }}" maxlength="255">
+    @error('guardian_state')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="guardian_pin_code">PIN Code</label>
+    <input class="form-control @error('guardian_pin_code') is-invalid @enderror" type="text" name="guardian_pin_code" id="guardian_pin_code" value="{{ old('guardian_pin_code', '') }}" maxlength="255">
+    @error('guardian_pin_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+<div class="col-md-3">
+    <label class="form-label" for="guardian_alternate_mobile">Alternate Mobile</label>
+    <input class="form-control @error('guardian_alternate_mobile') is-invalid @enderror" type="tel" name="guardian_alternate_mobile" id="guardian_alternate_mobile" value="{{ old('guardian_alternate_mobile', '') }}" maxlength="255">
+    @error('guardian_alternate_mobile')<div class="invalid-feedback">{{ $message }}</div>@enderror
+</div>
+
+<div class="col-md-3">
+        <label for="photo_guardian" class="form-label">Guardian Photo (optional)</label>
+        <div class="border rounded p-2 text-center bg-light">
+          <img id="preview_guardian" alt="Guardian Photo (optional) preview" style="height:115px;max-width:100%;object-fit:cover;display:none" class="rounded mb-2">
+          <input id="photo_guardian" class="form-control form-control-sm" type="file" name="photos[guardian]" accept="image/jpeg,image/png,image/webp" data-photo-preview="preview_guardian">
+        </div>
+        @error('photos.guardian')<div class="text-danger small">{{ $message }}</div>@enderror
+      </div>
 
         </div>
 
@@ -687,6 +878,66 @@
 
 </div>
 
+
+
+{{-- Additional student information and family photographs --}}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white py-3"><strong>Student & Family Photographs</strong></div>
+  <div class="card-body">
+    <p class="text-muted small">JPG, PNG or WebP; maximum 2 MB each. Photos are optional at admission and can be updated later.</p>
+    <div class="row g-3">
+
+      
+
+      
+
+      
+
+      <div class="col-md-4 col-lg-3">
+        <label for="photo_parents" class="form-label">Parents Together Photo</label>
+        <div class="border rounded p-2 text-center bg-light">
+          <img id="preview_parents" alt="Parents Together Photo preview" style="height:115px;max-width:100%;object-fit:cover;display:none" class="rounded mb-2">
+          <input id="photo_parents" class="form-control form-control-sm" type="file" name="photos[parents]" accept="image/jpeg,image/png,image/webp" data-photo-preview="preview_parents">
+        </div>
+        @error('photos.parents')<div class="text-danger small">{{ $message }}</div>@enderror
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white py-3"><strong>Emergency, Medical & Pickup Information</strong></div>
+  <div class="card-body"><div class="row g-3">
+<div class="col-md-4"><label class="form-label" for="emergency_contact_name">Emergency Contact Name</label><input type="text" id="emergency_contact_name" name="emergency_contact_name" value="{{ old("emergency_contact_name") }}" class="form-control" >@error("emergency_contact_name")<div class="text-danger small">{{ $message }}</div>@enderror</div>
+<div class="col-md-4"><label class="form-label" for="emergency_contact_mobile">Emergency Contact Mobile</label><input type="tel" id="emergency_contact_mobile" name="emergency_contact_mobile" value="{{ old("emergency_contact_mobile") }}" class="form-control" >@error("emergency_contact_mobile")<div class="text-danger small">{{ $message }}</div>@enderror</div>
+<div class="col-md-4"><label class="form-label" for="emergency_contact_relation">Emergency Contact Relation</label><input type="text" id="emergency_contact_relation" name="emergency_contact_relation" value="{{ old("emergency_contact_relation") }}" class="form-control" >@error("emergency_contact_relation")<div class="text-danger small">{{ $message }}</div>@enderror</div>
+<div class="col-md-4"><label class="form-label" for="student_aadhaar_last4">Student Aadhaar Last 4 Digits (optional)</label><input type="text" id="student_aadhaar_last4" name="student_aadhaar_last4" value="{{ old("student_aadhaar_last4") }}" class="form-control" maxlength=4 inputmode=numeric pattern=[0-9]{4}>@error("student_aadhaar_last4")<div class="text-danger small">{{ $message }}</div>@enderror</div>
+<div class="col-md-4"><label class="form-label" for="birth_place">Place of Birth</label><input type="text" id="birth_place" name="birth_place" value="{{ old("birth_place") }}" class="form-control" >@error("birth_place")<div class="text-danger small">{{ $message }}</div>@enderror</div>
+<div class="col-md-4"><label class="form-label" for="identification_mark">Identification Mark</label><input type="text" id="identification_mark" name="identification_mark" value="{{ old("identification_mark") }}" class="form-control" >@error("identification_mark")<div class="text-danger small">{{ $message }}</div>@enderror</div>
+<div class="col-md-4"><label class="form-label" for="medical_allergies">Allergies / Medical Alerts</label><input type="text" id="medical_allergies" name="medical_allergies" value="{{ old("medical_allergies") }}" class="form-control" >@error("medical_allergies")<div class="text-danger small">{{ $message }}</div>@enderror</div>
+<div class="col-md-4"><label class="form-label" for="medical_conditions">Important Medical Conditions</label><input type="text" id="medical_conditions" name="medical_conditions" value="{{ old("medical_conditions") }}" class="form-control" >@error("medical_conditions")<div class="text-danger small">{{ $message }}</div>@enderror</div>
+<div class="col-md-4"><label class="form-label" for="transport_required">Transport Required</label><select class="form-select" id="transport_required" name="transport_required"><option value="">Select</option><option value="yes" {{ old("transport_required") === "yes" ? "selected" : "" }}>Yes</option><option value="no" {{ old("transport_required") === "no" ? "selected" : "" }}>No</option></select>@error("transport_required")<div class="text-danger small">{{ $message }}</div>@enderror</div>
+<div class="col-md-4"><label class="form-label" for="pickup_person_name">Authorized Pickup Person</label><input type="text" id="pickup_person_name" name="pickup_person_name" value="{{ old("pickup_person_name") }}" class="form-control" >@error("pickup_person_name")<div class="text-danger small">{{ $message }}</div>@enderror</div>
+<div class="col-md-4"><label class="form-label" for="pickup_person_mobile">Authorized Pickup Mobile</label><input type="tel" id="pickup_person_mobile" name="pickup_person_mobile" value="{{ old("pickup_person_mobile") }}" class="form-control" >@error("pickup_person_mobile")<div class="text-danger small">{{ $message }}</div>@enderror</div>
+  </div><p class="text-muted small mt-3 mb-0">Only collect sensitive information needed for school operations; restrict access to authorized staff.</p></div>
+</div>
+<script>
+document.addEventListener('change', function(event) {
+  const input = event.target;
+  if (!input.matches('[data-photo-preview]')) return;
+  const preview = document.getElementById(input.dataset.photoPreview);
+  const file = input.files && input.files[0];
+  if (!file) { preview.removeAttribute('src'); preview.style.display='none'; return; }
+  if (!['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 2*1024*1024) {
+    alert('Please select a JPG, PNG or WebP image up to 2 MB.');
+    input.value=''; preview.removeAttribute('src'); preview.style.display='none'; return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) { preview.src=e.target.result; preview.style.display='inline-block'; };
+  reader.readAsDataURL(file);
+});
+</script>
 
 <div class="mb-5">
 

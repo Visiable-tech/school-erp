@@ -11,6 +11,8 @@ use App\Models\StudentEnrollment;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use App\Models\StudentImage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -85,6 +87,56 @@ class DirectStudentAdmissionController extends Controller
         $schoolId = auth()->user()->school_id;
 
         $validated = $request->validate([
+
+
+            'father_aadhaar_last4' => ['nullable','digits:4'],
+            'father_nationality' => ['nullable','string','max:255'],
+            'father_qualification' => ['nullable','string','max:255'],
+            'father_organization' => ['nullable','string','max:255'],
+            'father_work_address' => ['nullable','string','max:255'],
+            'father_address' => ['nullable','string','max:255'],
+            'father_city' => ['nullable','string','max:255'],
+            'father_state' => ['nullable','string','max:255'],
+            'father_pin_code' => ['nullable','regex:/^[0-9]{6}$/'],
+            'father_alternate_mobile' => ['nullable','regex:/^[0-9+() -]{7,20}$/'],
+            'mother_aadhaar_last4' => ['nullable','digits:4'],
+            'mother_nationality' => ['nullable','string','max:255'],
+            'mother_qualification' => ['nullable','string','max:255'],
+            'mother_organization' => ['nullable','string','max:255'],
+            'mother_work_address' => ['nullable','string','max:255'],
+            'mother_address' => ['nullable','string','max:255'],
+            'mother_city' => ['nullable','string','max:255'],
+            'mother_state' => ['nullable','string','max:255'],
+            'mother_pin_code' => ['nullable','regex:/^[0-9]{6}$/'],
+            'mother_alternate_mobile' => ['nullable','regex:/^[0-9+() -]{7,20}$/'],
+            'guardian_aadhaar_last4' => ['nullable','digits:4'],
+            'guardian_nationality' => ['nullable','string','max:255'],
+            'guardian_occupation' => ['nullable','string','max:255'],
+            'guardian_email' => ['nullable','email','max:255'],
+            'guardian_qualification' => ['nullable','string','max:255'],
+            'guardian_address' => ['nullable','string','max:255'],
+            'guardian_city' => ['nullable','string','max:255'],
+            'guardian_state' => ['nullable','string','max:255'],
+            'guardian_pin_code' => ['nullable','regex:/^[0-9]{6}$/'],
+            'guardian_alternate_mobile' => ['nullable','regex:/^[0-9+() -]{7,20}$/'],
+
+            'photos' => ['nullable','array'],
+            'photos.student' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:2048'],
+            'photos.father' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:2048'],
+            'photos.mother' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:2048'],
+            'photos.parents' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:2048'],
+            'photos.guardian' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:2048'],
+            'emergency_contact_name' => 'nullable|string|max:255',
+            'emergency_contact_mobile' => 'nullable|string|max:255',
+            'emergency_contact_relation' => 'nullable|string|max:255',
+            'student_aadhaar_last4' => 'nullable|digits:4',
+            'birth_place' => 'nullable|string|max:255',
+            'identification_mark' => 'nullable|string|max:255',
+            'medical_allergies' => 'nullable|string|max:255',
+            'medical_conditions' => 'nullable|string|max:255',
+            'transport_required' => 'nullable|in:yes,no',
+            'pickup_person_name' => 'nullable|string|max:255',
+            'pickup_person_mobile' => 'nullable|string|max:255',
 
             'admission_date' => ['required', 'date'],
 
@@ -343,6 +395,31 @@ class DirectStudentAdmissionController extends Controller
             return $student;
         });
 
+
+
+        // Optional student/family images. The existing StudentImage model is reused.
+        // If storage fails, admission remains saved; the error is logged for follow-up.
+        foreach (['student','father','mother','parents','guardian'] as $type) {
+            if (!$request->hasFile("photos.$type")) continue;
+            try {
+                $path = $request->file("photos.$type")
+                    ->store("students/images/{$student->id}", 'public');
+                StudentImage::updateOrCreate(
+                    ['school_id'=>$schoolId,'student_id'=>$student->id,'image_type'=>$type],
+                    ['image_path'=>$path,'created_by'=>auth()->id()]
+                );
+                if ($type === 'student') $student->update(['student_photo'=>$path]);
+            } catch (\Throwable $e) {
+                \Log::error('Student admission image upload failed', [
+                    'student_id'=>$student->id,'type'=>$type,'error'=>$e->getMessage()
+                ]);
+            }
+        }
+
+        DB::table('student_admission_extra_details')->updateOrInsert(
+            ['school_id'=>$schoolId,'student_id'=>$student->id],
+            ['emergency_contact_name'=>$validated['emergency_contact_name']??null,'emergency_contact_mobile'=>$validated['emergency_contact_mobile']??null,'emergency_contact_relation'=>$validated['emergency_contact_relation']??null,'student_aadhaar_last4'=>$validated['student_aadhaar_last4']??null,'birth_place'=>$validated['birth_place']??null,'identification_mark'=>$validated['identification_mark']??null,'medical_allergies'=>$validated['medical_allergies']??null,'medical_conditions'=>$validated['medical_conditions']??null,'transport_required'=>$validated['transport_required']??null,'pickup_person_name'=>$validated['pickup_person_name']??null,'pickup_person_mobile'=>$validated['pickup_person_mobile']??null,'father_aadhaar_last4'=>$validated['father_aadhaar_last4']??null,'father_nationality'=>$validated['father_nationality']??null,'father_qualification'=>$validated['father_qualification']??null,'father_organization'=>$validated['father_organization']??null,'father_work_address'=>$validated['father_work_address']??null,'father_address'=>$validated['father_address']??null,'father_city'=>$validated['father_city']??null,'father_state'=>$validated['father_state']??null,'father_pin_code'=>$validated['father_pin_code']??null,'father_alternate_mobile'=>$validated['father_alternate_mobile']??null,'mother_aadhaar_last4'=>$validated['mother_aadhaar_last4']??null,'mother_nationality'=>$validated['mother_nationality']??null,'mother_qualification'=>$validated['mother_qualification']??null,'mother_organization'=>$validated['mother_organization']??null,'mother_work_address'=>$validated['mother_work_address']??null,'mother_address'=>$validated['mother_address']??null,'mother_city'=>$validated['mother_city']??null,'mother_state'=>$validated['mother_state']??null,'mother_pin_code'=>$validated['mother_pin_code']??null,'mother_alternate_mobile'=>$validated['mother_alternate_mobile']??null,'guardian_aadhaar_last4'=>$validated['guardian_aadhaar_last4']??null,'guardian_nationality'=>$validated['guardian_nationality']??null,'guardian_occupation'=>$validated['guardian_occupation']??null,'guardian_email'=>$validated['guardian_email']??null,'guardian_qualification'=>$validated['guardian_qualification']??null,'guardian_address'=>$validated['guardian_address']??null,'guardian_city'=>$validated['guardian_city']??null,'guardian_state'=>$validated['guardian_state']??null,'guardian_pin_code'=>$validated['guardian_pin_code']??null,'guardian_alternate_mobile'=>$validated['guardian_alternate_mobile']??null,'created_at'=>now(),'updated_at'=>now()]
+        );
 
         return redirect()
             ->route('students.show', $student)

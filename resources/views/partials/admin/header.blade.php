@@ -1,4 +1,10 @@
-<header class="admin-header">
+
+
+@if(!request()->is('dashboard'))
+    <header class="admin-header">
+@else 
+    <header class="admin-header" style="left:0;">
+@endif
 
     <div class="container-fluid">
 
@@ -19,18 +25,40 @@
 
                 <div>
 
-                    @if(auth()->user()->school)
+                    <a href="{{ route('modules.index') }}" class="all_modules" style="color: #000;
+    margin-left: 30px;
+    font-weight: bold;
+    font-size: 18px;
+    text-decoration: none;">
+                        <i class="bi bi-grid-3x3-gap-fill"></i> All Modules
+                    </a>
 
-                        <strong>
-                            {{ auth()->user()->school->school_name }}
-                        </strong>
+                    @if(!request()->is('dashboard'))
+                        @if(auth()->user()->school)
 
-                    @else
+                            <strong>
+                                <a href="/dashboard">{{ auth()->user()->school->school_name }}</a>
+                            </strong>
 
-                        <strong>
-                            School ERP
-                        </strong>
+                        @else
 
+                            <strong>
+                                School ERP
+                            </strong>
+
+                        @endif
+                    @else 
+                        @if(auth()->user()->school)
+
+                             <a href="/dashboard"><img src="/assets/images/header_logo.png" style="width:30%;"></a>
+
+                        @else
+
+                            <strong>
+                                School ERP
+                            </strong>
+
+                        @endif
                     @endif
 
                 </div>

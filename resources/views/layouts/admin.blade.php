@@ -193,6 +193,8 @@
 
         }
 
+        .admin-main-fullwidth { margin-left: 0 !important; }
+        .admin-main-fullwidth .admin-header { left: 0 !important; }
     </style>
 
     @stack('styles')
@@ -201,9 +203,14 @@
 
 <body>
 
-@include('partials.admin.sidebar')
+@php
+    $hideSidebar = request()->is('dashboard', 'dashbord', 'all-modules');
+@endphp
+@if(!$hideSidebar)
+    @include('partials.admin.sidebar')
+@endif
 
-<div class="admin-main">
+<div class="admin-main {{ $hideSidebar ? 'admin-main-fullwidth' : '' }}">
 
     @include('partials.admin.header')
 

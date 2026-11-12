@@ -43,7 +43,7 @@
             <strong>Class List</strong>
 
             <span class="text-muted">
-                Total: {{ $classes->total() }}
+                Total: {{ $classes->count() }}
             </span>
 
         </div>
@@ -60,6 +60,7 @@
                 <thead class="table-light">
 
                     <tr>
+                        @can('class.edit')<th width="55">Move</th>@endcan
                         <th width="70">#</th>
                         <th>Class</th>
                         <th>Code</th>
@@ -71,14 +72,16 @@
 
                 </thead>
 
-                <tbody>
+                <tbody id="sortableClasses">
 
                     @forelse($classes as $schoolClass)
 
-                        <tr>
-
+                        <tr data-id="{{ $schoolClass->id }}">
+                            @can('class.edit')
+                            <td><span class="class-drag-handle" title="Drag to reorder" aria-label="Drag to reorder" style="cursor:grab;touch-action:none;font-size:20px">&#9776;</span></td>
+                            @endcan
                             <td>
-                                {{ $classes->firstItem() + $loop->index }}
+                                {{ $loop->iteration }}
                             </td>
 
                             <td>
@@ -107,7 +110,7 @@
 
                             </td>
 
-                            <td>
+                            <td class="class-sort-order">
                                 {{ $schoolClass->sort_order }}
                             </td>
 
@@ -185,7 +188,7 @@
                         <tr>
 
                             <td
-                                colspan="7"
+                                @can('class.edit') colspan="8" @else colspan="7" @endcan
                                 class="text-center py-5 text-muted"
                             >
 
@@ -206,16 +209,53 @@
         </div>
 
 
-        @if($classes->hasPages())
-
-            <div class="mt-4">
-                {{ $classes->links() }}
-            </div>
-
-        @endif
 
     </div>
 
 </div>
 
 @endsection
+@can('class.edit')
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tbody = document.getElementById('sortableClasses');
+    if (!tbody || typeof Sortable === 'undefined') return;
+    let saving = false;
+    new Sortable(tbody, {
+        animation: 150,
+        handle: '.class-drag-handle',
+        ghostClass: 'table-active',
+        onEnd: async function (evt) {
+            if (evt.oldIndex === evt.newIndex || saving) return;
+            saving = true;
+            const ids = [...tbody.querySelectorAll('tr[data-id]')].map(r => Number(r.dataset.id));
+            try {
+                const response = await fetch(@json(route('school-classes.reorder')), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': @json(csrf_token())
+                    },
+                    body: JSON.stringify({ ids })
+                });
+                if (!response.ok) throw new Error('Could not save class order.');
+                tbody.querySelectorAll('tr[data-id]').forEach((row, index) => {
+                    const cells = row.querySelectorAll('td');
+                    const numberCell = cells[1]; // Move column precedes #
+                    const sortCell = row.querySelector('.class-sort-order');
+                    if (numberCell) numberCell.textContent = index + 1;
+                    if (sortCell) sortCell.textContent = index + 1;
+                });
+            } catch (error) {
+                alert(error.message + ' Reloading original order.');
+                window.location.reload();
+            } finally { saving = false; }
+        }
+    });
+});
+</script>
+@endpush
+@endcan

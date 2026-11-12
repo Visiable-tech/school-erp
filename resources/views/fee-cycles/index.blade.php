@@ -163,6 +163,20 @@
     </div>
 
 
+    @can('fee-cycle.edit')
+    <div class="d-flex align-items-center gap-2 mb-3">
+        @if(request()->boolean('sorting'))
+            <a href="{{ route('fee-cycles.index') }}" class="btn btn-outline-secondary btn-sm">Exit sorting</a>
+            <span class="text-muted small">Drag rows using the handle. Order saves automatically.</span>
+        @elseif(!request()->hasAny(['search','cycle_type','status']))
+            <a href="{{ route('fee-cycles.index', ['sorting' => 1]) }}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-grip-vertical"></i> Reorder rows
+            </a>
+        @endif
+        <span id="sortFeedback" class="small" role="status" aria-live="polite"></span>
+    </div>
+    @endcan
+
     {{-- List --}}
     <div class="card border-0 shadow-sm">
 
@@ -175,6 +189,7 @@
 
                     <tr>
 
+                        @if(request()->boolean('sorting'))<th width="44">Move</th>@endif
                         <th width="60">#</th>
 
                         <th>
@@ -210,15 +225,16 @@
                 </thead>
 
 
-                <tbody>
+                <tbody id="feeCycleSortable" data-url="{{ route('fee-cycles.reorder') }}" data-enabled="{{ request()->boolean('sorting') && auth()->user()->can('fee-cycle.edit') ? '1' : '0' }}">
 
                 @forelse($feeCycles as $cycle)
 
-                    <tr>
-
+                    <tr data-id="{{ $cycle->id }}">
+                        @if(request()->boolean('sorting'))
+                            <td><span class="sort-handle" title="Drag to reorder" style="cursor:grab"><i class="bi bi-grip-vertical"></i></span></td>
+                        @endif
                         <td>
-                            {{ $feeCycles->firstItem()
-                                + $loop->index }}
+                            {{ request()->boolean('sorting') ? $loop->iteration : $feeCycles->firstItem() + $loop->index }}
                         </td>
 
 
@@ -351,7 +367,7 @@
 
                     <tr>
 
-                        <td colspan="8"
+                        <td colspan="{{ request()->boolean('sorting') ? 9 : 8 }}"
                             class="text-center
                                    text-muted py-5">
 
@@ -370,7 +386,7 @@
         </div>
 
 
-        @if($feeCycles->hasPages())
+        @if(!request()->boolean('sorting') && $feeCycles->hasPages())
 
             <div class="card-footer bg-white">
 
@@ -383,5 +399,18 @@
     </div>
 
 </div>
+
+
+@push('scripts')
+@if(request()->boolean('sorting') && auth()->user()->can('fee-cycle.edit'))
+<script src="{{ asset('js/erp-row-sort.js') }}"></script>
+<script>
+  window.ERPRowSort?.init(document.getElementById('feeCycleSortable'), {
+    token: @json(csrf_token()),
+    feedback: document.getElementById('sortFeedback')
+  });
+</script>
+@endif
+@endpush
 
 @endsection

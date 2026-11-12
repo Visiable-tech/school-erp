@@ -336,12 +336,50 @@ class StudentController extends Controller
         ]);
 
 
-        return view(
-            'students.show',
-            compact('student')
-        );
+        $extraDetails = $this->admissionExtras($student);
+        $photoPaths = $this->admissionPhotoPaths($student);
+
+        // Student 360: all queries are scoped to the selected student and school.
+        $month = request()->input('month', now()->format('Y-m'));
+        if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month)) {
+            $month = now()->format('Y-m');
+        }
+        $attendance = \App\Models\StudentAttendance::query()
+            ->where('school_id', $student->school_id)->where('student_id', $student->id)
+            ->whereHas('attendanceSession', fn ($q) => $q->whereBetween('attendance_date', [$month.'-01', \Carbon\Carbon::parse($month.'-01')->endOfMonth()->toDateString()]))
+            ->with('attendanceSession')->get()->sortBy(fn ($r) => $r->attendanceSession?->attendance_date);
+        $feeDues = collect();
+        $feePayments = collect();
+        if (auth()->user()->canAny(['fee-collection.view', 'fee-structure.view', 'fee-reports.view', 'student-fee.view'])) {
+            $feeDues = \App\Models\StudentFeeDue::where('school_id', $student->school_id)->where('student_id', $student->id)->orderByDesc('due_date')->get();
+            $feePayments = \App\Models\FeeCollection::where('school_id', $student->school_id)->where('student_id', $student->id)->orderByDesc('payment_date')->get();
+        }
+        $documents = collect();
+        if (auth()->user()->canAny(['student-document.view', 'student-document.index', 'student.view'])) {
+            $documents = \App\Models\StudentDocument::where('school_id', $student->school_id)->where('student_id', $student->id)->orderByDesc('id')->get();
+        }
+        return view('students.show', compact('student', 'extraDetails', 'photoPaths', 'attendance', 'feeDues', 'feePayments', 'documents', 'month'));
     }
 
+
+
+    private function admissionExtras(Student $student): ?object
+    {
+        return DB::table('student_admission_extra_details')
+            ->where('school_id', $student->school_id)
+            ->where('student_id', $student->id)->first();
+    }
+
+    private function admissionPhotoPaths(Student $student): array
+    {
+        $paths = StudentImage::where('school_id', $student->school_id)
+            ->where('student_id', $student->id)
+            ->whereIn('image_type', ['student', 'father', 'mother', 'guardian', 'parents'])
+            ->orderByDesc('id')->get()->unique('image_type')
+            ->pluck('image_path', 'image_type')->all();
+        if (empty($paths['student']) && $student->student_photo) $paths['student'] = $student->student_photo;
+        return $paths;
+    }
 
     private function checkAccess(
         Student $student
@@ -365,9 +403,12 @@ class StudentController extends Controller
             'currentEnrollment.section',
         ]);
 
+        $extraDetails = $this->admissionExtras($student);
+        $photoPaths = $this->admissionPhotoPaths($student);
+
         return view(
             'students.edit',
-            compact('student')
+            compact('student', 'extraDetails', 'photoPaths')
         );
     }
 
@@ -595,6 +636,54 @@ class StudentController extends Controller
                 'max:100',
             ],
 
+            'emergency_contact_name' => ['nullable', 'string', 'max:255'],
+            'emergency_contact_mobile' => ['nullable', 'string', 'max:255'],
+            'emergency_contact_relation' => ['nullable', 'string', 'max:255'],
+            'student_aadhaar_last4' => ['nullable', 'digits:4'],
+            'birth_place' => ['nullable', 'string', 'max:255'],
+            'identification_mark' => ['nullable', 'string', 'max:255'],
+            'medical_allergies' => ['nullable', 'string', 'max:255'],
+            'medical_conditions' => ['nullable', 'string', 'max:255'],
+            'transport_required' => ['nullable', Rule::in(['yes','no'])],
+            'pickup_person_name' => ['nullable', 'string', 'max:255'],
+            'pickup_person_mobile' => ['nullable', 'string', 'max:255'],
+            'father_aadhaar_last4' => ['nullable', 'digits:4'],
+            'father_nationality' => ['nullable', 'string', 'max:255'],
+            'father_qualification' => ['nullable', 'string', 'max:255'],
+            'father_organization' => ['nullable', 'string', 'max:255'],
+            'father_work_address' => ['nullable', 'string', 'max:255'],
+            'father_address' => ['nullable', 'string', 'max:255'],
+            'father_city' => ['nullable', 'string', 'max:255'],
+            'father_state' => ['nullable', 'string', 'max:255'],
+            'father_pin_code' => ['nullable', 'regex:/^[0-9]{6}$/'],
+            'father_alternate_mobile' => ['nullable', 'regex:/^[0-9+() -]{7,20}$/'],
+            'mother_aadhaar_last4' => ['nullable', 'digits:4'],
+            'mother_nationality' => ['nullable', 'string', 'max:255'],
+            'mother_qualification' => ['nullable', 'string', 'max:255'],
+            'mother_organization' => ['nullable', 'string', 'max:255'],
+            'mother_work_address' => ['nullable', 'string', 'max:255'],
+            'mother_address' => ['nullable', 'string', 'max:255'],
+            'mother_city' => ['nullable', 'string', 'max:255'],
+            'mother_state' => ['nullable', 'string', 'max:255'],
+            'mother_pin_code' => ['nullable', 'regex:/^[0-9]{6}$/'],
+            'mother_alternate_mobile' => ['nullable', 'regex:/^[0-9+() -]{7,20}$/'],
+            'guardian_aadhaar_last4' => ['nullable', 'digits:4'],
+            'guardian_nationality' => ['nullable', 'string', 'max:255'],
+            'guardian_occupation' => ['nullable', 'string', 'max:255'],
+            'guardian_email' => ['nullable', 'email', 'max:255'],
+            'guardian_qualification' => ['nullable', 'string', 'max:255'],
+            'guardian_address' => ['nullable', 'string', 'max:255'],
+            'guardian_city' => ['nullable', 'string', 'max:255'],
+            'guardian_state' => ['nullable', 'string', 'max:255'],
+            'guardian_pin_code' => ['nullable', 'regex:/^[0-9]{6}$/'],
+            'guardian_alternate_mobile' => ['nullable', 'regex:/^[0-9+() -]{7,20}$/'],
+            'photos' => ['nullable', 'array'],
+            'photos.student' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'photos.father' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'photos.mother' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'photos.guardian' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'photos.parents' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+
             'status' => [
                 'nullable',
                 'boolean',
@@ -606,7 +695,31 @@ class StudentController extends Controller
             $request->boolean('status');
 
 
-        $student->update($validated);
+        $studentFields = array_intersect_key($validated, array_flip(['student_name', 'date_of_birth', 'gender', 'blood_group', 'nationality', 'religion', 'category', 'mother_tongue', 'father_name', 'father_mobile', 'father_email', 'father_occupation', 'mother_name', 'mother_mobile', 'mother_email', 'mother_occupation', 'guardian_name', 'guardian_relation', 'guardian_mobile', 'present_address', 'present_city', 'present_state', 'present_pin_code', 'permanent_address', 'permanent_city', 'permanent_state', 'permanent_pin_code', 'previous_school', 'previous_class', 'previous_board', 'status']));
+        $student->update($studentFields);
+
+        $extraFields = ['emergency_contact_name', 'emergency_contact_mobile', 'emergency_contact_relation', 'student_aadhaar_last4', 'birth_place', 'identification_mark', 'medical_allergies', 'medical_conditions', 'transport_required', 'pickup_person_name', 'pickup_person_mobile', 'father_aadhaar_last4', 'father_nationality', 'father_qualification', 'father_organization', 'father_work_address', 'father_address', 'father_city', 'father_state', 'father_pin_code', 'father_alternate_mobile', 'mother_aadhaar_last4', 'mother_nationality', 'mother_qualification', 'mother_organization', 'mother_work_address', 'mother_address', 'mother_city', 'mother_state', 'mother_pin_code', 'mother_alternate_mobile', 'guardian_aadhaar_last4', 'guardian_nationality', 'guardian_occupation', 'guardian_email', 'guardian_qualification', 'guardian_address', 'guardian_city', 'guardian_state', 'guardian_pin_code', 'guardian_alternate_mobile'];
+        $extraValues = array_intersect_key($validated, array_flip($extraFields));
+        $extraValues['updated_at'] = now();
+        DB::table('student_admission_extra_details')->updateOrInsert(
+            ['school_id' => $student->school_id, 'student_id' => $student->id],
+            $extraValues
+        );
+
+        foreach (['student','father','mother','guardian','parents'] as $type) {
+            if (!$request->hasFile("photos.$type")) continue;
+            $newPath = $request->file("photos.$type")->store('students/images/'.$student->id, 'public');
+            $existing = StudentImage::where('school_id', $student->school_id)
+                ->where('student_id', $student->id)->where('image_type', $type)->first();
+            StudentImage::updateOrCreate(
+                ['school_id' => $student->school_id, 'student_id' => $student->id, 'image_type' => $type],
+                ['image_path' => $newPath, 'created_by' => auth()->id()]
+            );
+            if ($type === 'student') $student->update(['student_photo' => $newPath]);
+            if ($existing && $existing->image_path && $existing->image_path !== $newPath) {
+                Storage::disk('public')->delete($existing->image_path);
+            }
+        }
 
 
         return redirect()

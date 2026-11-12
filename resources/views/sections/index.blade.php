@@ -42,7 +42,7 @@
             <strong>Section List</strong>
 
             <span class="text-muted">
-                Total: {{ $sections->total() }}
+                Total: {{ $sections->count() }}
             </span>
 
         </div>
@@ -59,6 +59,7 @@
                 <thead class="table-light">
 
                     <tr>
+                        @can('section.edit')<th width="55">Move</th>@endcan
                         <th>#</th>
                         <th>Academic Year</th>
                         <th>Wing</th>
@@ -71,14 +72,18 @@
 
                 </thead>
 
-                <tbody>
+                <tbody id="sortableSections">
 
                     @forelse($sections as $section)
 
-                        <tr>
-
+                        <tr data-id="{{ $section->id }}"
+                            data-year="{{ $section->academic_year_id }}"
+                            data-class="{{ $section->school_class_id }}">
+                            @can('section.edit')
+                                <td><span class="section-drag-handle" title="Drag within same class and academic year"><i class="bi bi-grip-vertical"></i></span></td>
+                            @endcan
                             <td>
-                                {{ $sections->firstItem() + $loop->index }}
+                                {{ $loop->iteration }}
                             </td>
 
                             <td>
@@ -187,7 +192,7 @@
                         <tr>
 
                             <td
-                                colspan="8"
+                                colspan="{{ auth()->user()->can('section.edit') ? 9 : 8 }}"
                                 class="text-center py-5 text-muted"
                             >
 
@@ -208,16 +213,57 @@
         </div>
 
 
-        @if($sections->hasPages())
-
-            <div class="mt-4">
-                {{ $sections->links() }}
-            </div>
-
-        @endif
-
     </div>
 
 </div>
 
+@can('section.edit')
+<style>
+.section-drag-handle { cursor: grab; font-size: 21px; color: #64748b; user-select: none; }
+.section-drag-handle:active { cursor: grabbing; }
+.section-sort-ghost { background: #dbeafe !important; opacity: .6; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tbody = document.getElementById('sortableSections');
+    if (!tbody || typeof Sortable === 'undefined') return;
+    const groupOf = row => row.dataset.year + ':' + row.dataset.class;
+    let saving = false;
+    new Sortable(tbody, {
+        animation: 150,
+        handle: '.section-drag-handle',
+        ghostClass: 'section-sort-ghost',
+        onMove: function (evt) {
+            return groupOf(evt.dragged) === groupOf(evt.related);
+        },
+        onEnd: async function (evt) {
+            if (evt.oldIndex === evt.newIndex || saving) return;
+            const row = evt.item;
+            const year = row.dataset.year, cls = row.dataset.class;
+            const ids = [...tbody.querySelectorAll('tr[data-id]')]
+                .filter(r => r.dataset.year === year && r.dataset.class === cls)
+                .map(r => Number(r.dataset.id));
+            saving = true;
+            try {
+                const response = await fetch(@json(route('sections.reorder')), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': @json(csrf_token())
+                    },
+                    body: JSON.stringify({ academic_year_id: Number(year), school_class_id: Number(cls), ids })
+                });
+                if (!response.ok) throw new Error((await response.json().catch(() => ({}))).message || 'Unable to save section order');
+                window.location.reload();
+            } catch (error) {
+                alert(error.message);
+                window.location.reload();
+            } finally { saving = false; }
+        }
+    });
+});
+</script>
+@endcan
 @endsection

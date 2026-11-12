@@ -1,5 +1,5 @@
 <aside class="admin-sidebar" id="adminSidebar">
-    <div class="sidebar-brand"><h4><i class="bi bi-mortarboard-fill"></i> School ERP</h4></div>
+    <div class="sidebar-brand"><a href="/dashboard"><img src="/assets/images/logo.png" style="width:100%;"></a></div>
     <div class="sidebar-menu">
         <div class="menu-title">Navigation</div>
         <a href="{{ route('dashboard') }}"><i class="bi bi-grid-3x3-gap"></i> Main Dashboard</a>
@@ -14,7 +14,7 @@
                 $module = 'hr';
             } elseif (str_starts_with($routeName, 'teacher.') || str_starts_with($routeName, 'teacher-assignments.') || str_starts_with($path, 'teacher/')) {
                 $module = 'teacher';
-            } elseif (str_starts_with($routeName, 'fees.') || preg_match('/^(fee-|fee_|fee\.|student-fee|optional-fee|concession-|fine-waiver|composite-concession|cheque-dd)/', $routeName)) {
+            } elseif (request()->is('fees', 'fees/*') || str_starts_with($routeName, 'fees.') || preg_match('/^(fee-|fee_|fee\.|student-fee|optional-fee|concession-|fine-waiver|composite-concession|cheque-dd)/', $routeName)) {
                 $module = 'fees';
             } elseif (str_starts_with($routeName, 'admission-') || str_starts_with($routeName, 'admission.') || str_starts_with($path, 'admission/')) {
                 $module = 'students';
@@ -26,12 +26,27 @@
                 $module = 'operations';
             }
         @endphp
+        @php
+            $currentUser = auth()->user();
+            $permissionNames = $currentUser ? $currentUser->getAllPermissions()->pluck('name') : collect();
+            $isAdministrator = $currentUser && $currentUser->hasAnyRole(['Super Admin', 'Admin']);
+            $hasStudentMenuPermission = $isAdministrator || $permissionNames->contains(function ($permission) {
+                return preg_match('/^(admission[.-]|student\.(?!fee)|student-admission\.|student-document\.|student-enrollment\.|student-promotion\.|student-attendance\.|promotion-status\.|tc-)/', $permission) === 1;
+            });
+            $hasAcademicMenuPermission = $isAdministrator || $permissionNames->contains(function ($permission) {
+                return preg_match('/^(academic-year\.|school\.|wing\.|class\.|section\.|subject\.|class-subject\.|section-group\.|school-calendar\.)/', $permission) === 1;
+            });
+        @endphp
         @if($module === 'teacher')
             @include('partials.admin.menus.teacher')
         @elseif($module === 'academic')
-            @include('partials.admin.menus.academic')
+            @if($hasAcademicMenuPermission)
+                @include('partials.admin.menus.academic')
+            @endif
         @elseif($module === 'students')
-            @include('partials.admin.menus.students')
+            @if($hasStudentMenuPermission)
+                @include('partials.admin.menus.students')
+            @endif
         @elseif($module === 'fees')
             @include('partials.admin.menus.fees')
         @elseif($module === 'hr')

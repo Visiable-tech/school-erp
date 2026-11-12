@@ -2,89 +2,40 @@
 
 namespace App\Services;
 
-use App\Models\AdmissionNumberScheme;
+use App\Models\AcademicYear;
+use App\Models\School;
+use App\Models\Student;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class AdmissionNumberGenerator
 {
-    /**
-     * Must be called inside the transaction that saves the
-     * corresponding admission/enquiry/receipt record.
-     */
-    public function generate(
-        int $schoolId,
-        string $schemeType,
-        ?string $academicYear = null,
-        ?string $classCode = null
-    ): string {
-        if (!DB::transactionLevel()) {
-            throw new \LogicException(
-                'Number generation must run inside a database transaction.'
-            );
+    /** Call inside DB::transaction(), after locking the school's row. */
+    public function generate(int $schoolId, int $academicYearId): string
+    {
+        $school = School::whereKey($schoolId)->lockForUpdate()->firstOrFail();
+        $year = AcademicYear::where('school_id', $schoolId)->findOrFail($academicYearId);
+
+        // school_code is the configurable school abbreviation, e.g. DWPS.
+        $code = strtoupper(trim((string) $school->school_code));
+        if (!preg_match('/^[A-Z0-9]+$/', $code)) {
+            throw ValidationException::withMessages(['school_id' => 'Set a valid alphanumeric school code first.']);
         }
-
-        $scheme = AdmissionNumberScheme::query()
-            ->where('school_id', $schoolId)
-            ->where('scheme_type', $schemeType)
-            ->lockForUpdate()
-            ->firstOrFail();
-
-        if (!$scheme->status || !$scheme->auto_generate) {
-            throw ValidationException::withMessages([
-                'number' => 'Automatic numbering is disabled for this scheme.',
-            ]);
+        $startYear = $year->start_date?->format('Y');
+        if (!$startYear && preg_match('/(20\d{2})/', (string) $year->name, $matches)) {
+            $startYear = $matches[1];
         }
-
-        if ($scheme->include_academic_year && !$academicYear) {
-            throw ValidationException::withMessages([
-                'academic_year' => 'Academic year is required.',
-            ]);
+        if (!$startYear) {
+            throw ValidationException::withMessages(['academic_year_id' => 'Set the academic session start date first.']);
         }
+        $prefix = $code . substr($startYear, -2);
 
-        if ($scheme->include_class && !$classCode) {
-            throw ValidationException::withMessages([
-                'school_class' => 'Class is required.',
-            ]);
-        }
-
-        $next = max(
-            (int) $scheme->starting_number,
-            (int) $scheme->last_generated_number + 1
-        );
-
-        if (strlen((string) $next) > (int) $scheme->number_length) {
-            throw ValidationException::withMessages([
-                'number' => 'Number sequence has exceeded its configured length.',
-            ]);
-        }
-
-        $parts = [];
-
-        if ($scheme->fixed_string) {
-            $parts[] = $scheme->fixed_string;
-        }
-
-        if ($scheme->include_academic_year) {
-            $parts[] = $academicYear;
-        }
-
-        if ($scheme->include_class) {
-            $parts[] = $classCode;
-        }
-
-        $parts[] = str_pad(
-            (string) $next,
-            (int) $scheme->number_length,
-            '0',
-            STR_PAD_LEFT
-        );
-
-        $number = implode($scheme->separator ?? '', $parts);
-
-        $scheme->last_generated_number = $next;
-        $scheme->save();
-
-        return $number;
+        // Numeric max rather than lexical max: handles sequence 999 -> 1000 correctly.
+        $max = Student::where('school_id', $schoolId)
+            ->where('admission_no', 'like', $prefix . '%')
+            ->whereRaw('admission_no REGEXP ?', ['^' . preg_quote($prefix, '/') . '[0-9]{3,}$'])
+            ->selectRaw('MAX(CAST(SUBSTRING(admission_no, ?) AS UNSIGNED)) as max_sequence', [strlen($prefix) + 1])
+            ->value('max_sequence');
+        return $prefix . str_pad((string) ((int) $max + 1), 3, '0', STR_PAD_LEFT);
     }
 }

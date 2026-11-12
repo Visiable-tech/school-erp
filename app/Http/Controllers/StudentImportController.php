@@ -111,6 +111,7 @@ class StudentImportController extends Controller
         $previewRows = [];
 
         $seenRollNumbers = [];
+        $seenAdmissionNumbers = [];
 
 
         foreach (
@@ -145,7 +146,8 @@ class StudentImportController extends Controller
             $result = $this->validateImportRow(
                 $row,
                 $schoolId,
-                $seenRollNumbers
+                $seenRollNumbers,
+                $seenAdmissionNumbers
             );
 
 
@@ -283,6 +285,7 @@ class StudentImportController extends Controller
         $freshRows = [];
 
         $seenRollNumbers = [];
+        $seenAdmissionNumbers = [];
 
 
         foreach ($rows as $previewRow) {
@@ -291,7 +294,8 @@ class StudentImportController extends Controller
                 $this->validateImportRow(
                     $previewRow['data'],
                     $schoolId,
-                    $seenRollNumbers
+                    $seenRollNumbers,
+                    $seenAdmissionNumbers
                 );
 
 
@@ -435,6 +439,18 @@ class StudentImportController extends Controller
                     }
 
 
+                    // Reserve explicit Excel admission numbers so generated ones cannot take them.
+                    $reservedAdmissionNumbers = [];
+                    $excelAdmissionNumbers = [];
+                    foreach ($freshRows as $item) {
+                        $explicit = strtoupper((string) ($this->cleanValue(
+                            $item['data']['admission_no'] ?? $item['data']['admission_id'] ?? null
+                        ) ?? ''));
+                        if ($explicit !== '') {
+                            $excelAdmissionNumbers[$explicit] = true;
+                        }
+                    }
+
                     $count = 0;
 
 
@@ -499,11 +515,27 @@ class StudentImportController extends Controller
                             );
 
 
-                        $admissionNo =
-                            $this->generateAdmissionNo(
+                        $providedAdmissionNo = strtoupper((string) ($this->cleanValue(
+                            $row['admission_no'] ?? $row['admission_id'] ?? null
+                        ) ?? ''));
+
+                        $admissionNo = $providedAdmissionNo !== ''
+                            ? $providedAdmissionNo
+                            : $this->generateAdmissionNo(
                                 $schoolId,
-                                $admissionDate
+                                $admissionDate,
+                                $row['academic_year'] ?? null,
+                                $reservedAdmissionNumbers + $excelAdmissionNumbers
                             );
+
+                        if (isset($reservedAdmissionNumbers[$admissionNo]) && $providedAdmissionNo !== '') {
+                            // The same number was already inserted earlier in this batch.
+                            throw new \RuntimeException('Duplicate admission number: ' . $admissionNo);
+                        }
+                        if (Student::where('school_id', $schoolId)->where('admission_no', $admissionNo)->exists()) {
+                            throw new \RuntimeException('Admission number already exists: ' . $admissionNo);
+                        }
+                        $reservedAdmissionNumbers[$admissionNo] = true;
 
 
                         $student =
@@ -745,7 +777,8 @@ class StudentImportController extends Controller
     private function validateImportRow(
         array $row,
         int $schoolId,
-        array &$seenRollNumbers
+        array &$seenRollNumbers,
+        array &$seenAdmissionNumbers
     ): array {
 
         $errors = [];
@@ -1062,6 +1095,31 @@ class StudentImportController extends Controller
         }
 
 
+        // Optional admission number supplied in the Excel sheet.
+        $providedAdmissionNo = strtoupper((string) ($this->cleanValue(
+            $row['admission_no'] ?? $row['admission_id'] ?? null
+        ) ?? ''));
+
+        if ($providedAdmissionNo !== '') {
+            $school = School::find($schoolId);
+            $code = $school ? $this->getSchoolCode($school) : '';
+            $yearCode = $academicYearName && preg_match('/(\d{4})/', $academicYearName, $matches)
+                ? substr($matches[1], -2)
+                : ($admissionDate ? Carbon::parse($admissionDate)->format('y') : '');
+            $expectedPrefix = $code . $yearCode;
+
+            if ($expectedPrefix === '' || !preg_match('/^' . preg_quote($expectedPrefix, '/') . '\d{3,}$/', $providedAdmissionNo)) {
+                $errors[] = 'Admission number must start with ' . $expectedPrefix . ' followed by at least 3 digits.';
+            }
+            if (isset($seenAdmissionNumbers[$providedAdmissionNo])) {
+                $errors[] = 'Duplicate admission number in Excel file.';
+            }
+            $seenAdmissionNumbers[$providedAdmissionNo] = true;
+            if (Student::where('school_id', $schoolId)->where('admission_no', $providedAdmissionNo)->exists()) {
+                $errors[] = 'Admission number already exists in this school.';
+            }
+        }
+
         return [
             'errors' => $errors,
             'resolved' => $resolved,
@@ -1164,53 +1222,45 @@ class StudentImportController extends Controller
     }
 
 
+    private function getSchoolCode(School $school): string
+    {
+        // Use the actual school code column from your schools table.
+        $code = $school->getAttribute('school_code') ?: $school->getAttribute('code');
+        if (!$code) {
+            throw new \RuntimeException('School code is missing. Set schools.school_code (or schools.code) first.');
+        }
+        return strtoupper(trim((string) $code));
+    }
+
     private function generateAdmissionNo(
         int $schoolId,
-        string $date
+        string $date,
+        ?string $academicYearName = null,
+        array $reserved = []
     ): string {
+        $school = School::findOrFail($schoolId);
+        $code = $this->getSchoolCode($school);
 
-        $year =
-            Carbon::parse($date)
-                ->format('Y');
+        // Academic session 2026-2027 uses 26, regardless of admission date.
+        $year = $academicYearName && preg_match('/(\d{4})/', $academicYearName, $matches)
+            ? substr($matches[1], -2)
+            : Carbon::parse($date)->format('y');
+        $prefix = $code . $year;
 
+        $lastNo = Student::where('school_id', $schoolId)
+            ->where('admission_no', 'like', $prefix . '%')
+            ->orderByDesc('admission_no')
+            ->value('admission_no');
 
-        $prefix =
-            'ADM-' . $year . '-';
+        $sequence = $lastNo && ctype_digit(substr($lastNo, strlen($prefix)))
+            ? (int) substr($lastNo, strlen($prefix))
+            : 0;
 
+        do {
+            $sequence++;
+            $candidate = $prefix . str_pad((string) $sequence, 3, '0', STR_PAD_LEFT);
+        } while (isset($reserved[$candidate]));
 
-        $lastNo =
-            Student::where(
-                'school_id',
-                $schoolId
-            )
-            ->where(
-                'admission_no',
-                'like',
-                $prefix . '%'
-            )
-            ->orderByDesc(
-                'admission_no'
-            )
-            ->value(
-                'admission_no'
-            );
-
-
-        $sequence =
-            $lastNo
-                ? (int) substr(
-                    $lastNo,
-                    -5
-                )
-                : 0;
-
-
-        return $prefix
-            . str_pad(
-                $sequence + 1,
-                5,
-                '0',
-                STR_PAD_LEFT
-            );
+        return $candidate;
     }
 }

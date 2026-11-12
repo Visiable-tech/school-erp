@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FeeCycle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class FeeCycleController extends Controller
@@ -61,14 +62,49 @@ class FeeCycleController extends Controller
 
         $feeCycles = $query
             ->orderBy('sort_order')
-            ->orderBy('name')
-            ->paginate(20)
-            ->withQueryString();
+            ->orderBy('id');
+
+        $sorting = $request->boolean('sorting') && !$request->hasAny(['search', 'cycle_type', 'status']);
+        $feeCycles = $sorting ? $feeCycles->get() : $feeCycles->paginate(20)->withQueryString();
 
         return view(
             'fee-cycles.index',
             compact('feeCycles')
         );
+    }
+
+
+    /** Reorder all fee cycles for the signed-in user's school. */
+    public function reorder(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'distinct'],
+        ]);
+
+        $schoolId = (int) Auth::user()->school_id;
+        abort_unless($schoolId > 0, 403);
+
+        DB::transaction(function () use ($schoolId, $validated) {
+            // Lock the school row so two concurrent reorder requests cannot interleave.
+            DB::table('schools')->where('id', $schoolId)->lockForUpdate()->first();
+            $existing = FeeCycle::where('school_id', $schoolId)
+                ->orderBy('id')->pluck('id')->map(fn ($id) => (int) $id)->all();
+            $submitted = array_map('intval', $validated['ids']);
+            $a = $existing; $b = $submitted;
+            sort($a); sort($b);
+            if ($a !== $b) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'ids' => 'The list changed. Refresh the page and try again.',
+                ]);
+            }
+            foreach ($submitted as $position => $id) {
+                FeeCycle::where('school_id', $schoolId)->whereKey($id)
+                    ->update(['sort_order' => $position + 1]);
+            }
+        }, 3);
+
+        return response()->json(['message' => 'Sort order saved successfully.']);
     }
 
 

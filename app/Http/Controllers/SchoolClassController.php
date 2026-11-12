@@ -6,6 +6,8 @@ use App\Models\SchoolClass;
 use App\Models\Wing;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
 
 class SchoolClassController extends Controller
 {
@@ -16,10 +18,44 @@ class SchoolClassController extends Controller
         $classes = SchoolClass::with('wing')
             ->where('school_id', $schoolId)
             ->orderBy('sort_order')
-            ->orderBy('name')
-            ->paginate(20);
+            ->orderBy('id')
+            ->get();
 
         return view('school-classes.index', compact('classes'));
+    }
+
+    public function reorder(Request $request)
+    {
+        $data = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'distinct'],
+        ]);
+
+        $schoolId = auth()->user()->school_id;
+        abort_unless($schoolId, 403, 'No school assigned.');
+
+        DB::transaction(function () use ($data, $schoolId) {
+            // Lock the school row so concurrent reorder requests cannot interleave.
+            DB::table('schools')->where('id', $schoolId)->lockForUpdate()->first();
+            $current = SchoolClass::where('school_id', $schoolId)
+                ->pluck('id')->map(fn ($id) => (int) $id)->sort()->values()->all();
+            $submitted = collect($data['ids'])
+                ->map(fn ($id) => (int) $id)->sort()->values()->all();
+
+            if ($current !== $submitted) {
+                throw ValidationException::withMessages([
+                    'ids' => 'Class list changed or includes another school. Refresh and retry.',
+                ]);
+            }
+
+            foreach ($data['ids'] as $index => $id) {
+                SchoolClass::where('school_id', $schoolId)
+                    ->whereKey($id)
+                    ->update(['sort_order' => $index + 1]);
+            }
+        });
+
+        return response()->json(['success' => true]);
     }
 
     public function create()

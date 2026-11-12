@@ -37,7 +37,7 @@
         <input type="search" id="erpModuleSearch" class="form-control erp-module-search" placeholder="Search modules..." aria-label="Search modules">
     </div>
     <div class="row erp-module-grid" id="erpModuleGrid">
-        @if((auth()->user()?->hasAnyRole(['Admin','Super Admin'])) && (auth()->user()?->can('academic-year.view') ?? false) && \Illuminate\Support\Facades\Route::has('academic-years.index'))
+        @if((auth()->user()?->can('academic-year.view') ?? false) && \Illuminate\Support\Facades\Route::has('academic-years.index'))
             <div class="erp-module-tile">
                 <a href="{{ route('academic-years.index') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
                     <i class="bi bi-gear erp-module-icon"></i>
@@ -45,7 +45,7 @@
                 </a>
             </div>
         @endif
-        @if((auth()->user()?->hasAnyRole(['Admin','Super Admin'])) && \Illuminate\Support\Facades\Route::has('admission.dashboard'))
+        @if((auth()->user()?->hasAnyPermission(['admission-application.view','admission-candidate.view']) ?? false) && \Illuminate\Support\Facades\Route::has('admission.dashboard'))
             <div class="erp-module-tile">
                 <a href="{{ route('admission.dashboard') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
                     <i class="bi bi-person-plus erp-module-icon"></i>
@@ -53,7 +53,7 @@
                 </a>
             </div>
         @endif
-        @if((auth()->user()?->hasAnyRole(['Admin','Super Admin'])) && (auth()->user()?->can('student.view') ?? false) && \Illuminate\Support\Facades\Route::has('student-information.dashboard'))
+        @if((auth()->user()?->can('student.view') ?? false) && \Illuminate\Support\Facades\Route::has('student-information.dashboard'))
             <div class="erp-module-tile">
                 <a href="{{ route('student-information.dashboard') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
                     <i class="bi bi-people erp-module-icon"></i>
@@ -61,7 +61,7 @@
                 </a>
             </div>
         @endif
-        @if((auth()->user()?->hasAnyRole(['Admin','Super Admin'])) && (auth()->user()?->can('fee-collection.view') ?? false) && \Illuminate\Support\Facades\Route::has('fees.dashboard'))
+        @if((auth()->user()?->can('fee-head.view') ?? false) && \Illuminate\Support\Facades\Route::has('fees.dashboard'))
             <div class="erp-module-tile">
                 <a href="{{ route('fees.dashboard') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
                     <i class="bi bi-cash-stack erp-module-icon"></i>
@@ -198,7 +198,7 @@
             </div>
         @endif
     </div>
-    <p id="erpModuleEmpty" class="text-muted mt-4 d-none">No matching modules available for your account.</p>
+    <p id="erpModuleEmpty" class="text-muted mt-4 d-none">No modules are assigned to this account, or no modules match your search. Contact the administrator to review your permissions.</p>
 </div>
 <script>
 document.addEventListener('DOMContentLoaded', function () {

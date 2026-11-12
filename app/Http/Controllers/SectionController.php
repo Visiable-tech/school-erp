@@ -7,6 +7,8 @@ use App\Models\AcademicYear;
 use App\Models\SchoolClass;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class SectionController extends Controller
 {
@@ -22,11 +24,49 @@ class SectionController extends Controller
             ->orderBy('academic_year_id', 'desc')
             ->orderBy('school_class_id')
             ->orderBy('sort_order')
-            ->paginate(20);
+            ->orderBy('id')
+            ->get();
 
         return view('sections.index', compact('sections'));
     }
 
+
+    /** Save section positions within one academic-year/class group. */
+    public function reorder(Request $request)
+    {
+        $data = $request->validate([
+            'academic_year_id' => ['required', 'integer'],
+            'school_class_id' => ['required', 'integer'],
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['required', 'integer', 'distinct'],
+        ]);
+
+        $schoolId = auth()->user()->school_id;
+        abort_unless($schoolId, 403, 'No school assigned.');
+
+        DB::transaction(function () use ($data, $schoolId) {
+            $query = Section::where('school_id', $schoolId)
+                ->where('academic_year_id', $data['academic_year_id'])
+                ->where('school_class_id', $data['school_class_id']);
+
+            $actual = (clone $query)->lockForUpdate()->pluck('id')
+                ->map(fn ($id) => (int) $id)->sort()->values()->all();
+            $submitted = collect($data['ids'])
+                ->map(fn ($id) => (int) $id)->sort()->values()->all();
+
+            if ($actual !== $submitted) {
+                throw ValidationException::withMessages([
+                    'ids' => 'The section list has changed. Refresh and try again.',
+                ]);
+            }
+
+            foreach ($data['ids'] as $position => $id) {
+                (clone $query)->whereKey($id)->update(['sort_order' => $position + 1]);
+            }
+        });
+
+        return response()->json(['success' => true]);
+    }
 
     public function create()
     {

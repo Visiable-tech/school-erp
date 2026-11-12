@@ -33,33 +33,9 @@
                         <i class="bi bi-grid-3x3-gap-fill"></i> All Modules
                     </a>
 
-                    @if(!request()->is('dashboard'))
-                        @if(auth()->user()->school)
+                    <a href="/dashboard"><img src="/assets/images/header_logo.png" style="height:auto; width:30%"></a>
 
-                            <strong>
-                                <a href="/dashboard">{{ auth()->user()->school->school_name }}</a>
-                            </strong>
-
-                        @else
-
-                            <strong>
-                                School ERP
-                            </strong>
-
-                        @endif
-                    @else 
-                        @if(auth()->user()->school)
-
-                             <a href="/dashboard"><img src="/assets/images/header_logo.png" style="width:30%;"></a>
-
-                        @else
-
-                            <strong>
-                                School ERP
-                            </strong>
-
-                        @endif
-                    @endif
+                    
 
                 </div>
 

@@ -181,6 +181,57 @@
 
 
 <div class="dashboard-page">
+    {{-- Visible to any authenticated user, including Accounts role. --}}
+    @if(\Illuminate\Support\Facades\Route::has('modules.index'))
+    <div class="alert alert-light border d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div><strong>My Assigned Modules</strong><div class="text-muted small">Open modules allowed by your role permissions.</div></div>
+        <a href="{{ route('modules.index') }}" class="btn btn-primary btn-sm"><i class="bi bi-grid-3x3-gap me-1"></i> Open My Modules</a>
+    </div>
+    @endif
+
+
+    {{-- ADMINISTRATION & ACCESS CONTROL --}}
+    @hasanyrole('Super Admin|Admin')
+    <div class="dash-card mb-4">
+        <div class="chart-header">
+            <div>
+                <h6><i class="bi bi-shield-lock me-2"></i>Administration & Access Control</h6>
+                <small>Manage users, roles and module access</small>
+            </div>
+        </div>
+        <div class="dash-card-body">
+            <div class="row g-3">
+                <div class="col-md-6 col-xl-4">
+                    <a href="{{ route('access.users.index') }}" class="text-decoration-none text-reset">
+                        <div class="border rounded-3 p-3 h-100 d-flex align-items-center gap-3">
+                            <span class="stat-icon icon-blue"><i class="bi bi-people"></i></span>
+                            <span><strong class="d-block">User Management</strong><small class="text-muted">Add, edit and activate users</small></span>
+                        </div>
+                    </a>
+                </div>
+                @role('Super Admin')
+                <div class="col-md-6 col-xl-4">
+                    <a href="{{ route('access.roles.index') }}" class="text-decoration-none text-reset">
+                        <div class="border rounded-3 p-3 h-100 d-flex align-items-center gap-3">
+                            <span class="stat-icon icon-purple"><i class="bi bi-shield-check"></i></span>
+                            <span><strong class="d-block">Roles & Permissions</strong><small class="text-muted">Configure module access by role</small></span>
+                        </div>
+                    </a>
+                </div>
+                @endrole
+                <div class="col-md-6 col-xl-4">
+                    <a href="{{ route('access.users.index') }}" class="text-decoration-none text-reset">
+                        <div class="border rounded-3 p-3 h-100 d-flex align-items-center gap-3">
+                            <span class="stat-icon icon-green"><i class="bi bi-person-check"></i></span>
+                            <span><strong class="d-block">Assign Roles to Users</strong><small class="text-muted">Edit a user and select their roles</small></span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endhasanyrole
+
 
     {{-- TOP STATISTICS --}}
     <div class="row g-3 mb-3">

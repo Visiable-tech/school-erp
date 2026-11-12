@@ -301,9 +301,9 @@ class DirectStudentAdmissionController extends Controller
             }
 
 
-            $admissionNo = $this->generateAdmissionNo(
+            $admissionNo = app(\App\Services\AdmissionNumberGenerator::class)->generate(
                 $schoolId,
-                $validated['admission_date']
+                (int) $validated['academic_year_id']
             );
 
 
@@ -431,33 +431,4 @@ class DirectStudentAdmissionController extends Controller
     }
 
 
-    private function generateAdmissionNo(
-        int $schoolId,
-        string $admissionDate
-    ): string {
-
-        $year = Carbon::parse($admissionDate)->format('Y');
-
-        $prefix = 'ADM-' . $year . '-';
-
-
-        $lastNo = Student::where('school_id', $schoolId)
-            ->where('admission_no', 'like', $prefix . '%')
-            ->orderByDesc('admission_no')
-            ->value('admission_no');
-
-
-        $lastSequence = $lastNo
-            ? (int) substr($lastNo, -5)
-            : 0;
-
-
-        return $prefix
-            . str_pad(
-                $lastSequence + 1,
-                5,
-                '0',
-                STR_PAD_LEFT
-            );
-    }
 }

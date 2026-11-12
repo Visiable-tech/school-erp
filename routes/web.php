@@ -282,6 +282,10 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('permission:class.edit')
         ->name('school-classes.edit');
 
+    Route::post('/classes/reorder', [SchoolClassController::class, 'reorder'])
+        ->middleware('permission:class.edit')
+        ->name('school-classes.reorder');    
+
 
     Route::put(
         '/classes/{schoolClass}',
@@ -305,6 +309,10 @@ Route::middleware(['auth'])->group(function () {
     | SECTIONS
     |--------------------------------------------------------------------------
     */
+
+    Route::post('/sections/reorder', [SectionController::class, 'reorder'])
+        ->middleware('permission:section.edit')
+        ->name('sections.reorder');
 
     Route::get(
         '/sections',
@@ -1872,7 +1880,12 @@ Route::middleware(['auth'])->group(function () {
     )
         ->whereNumber('feeCycle')
         ->middleware('permission:fee-cycle.delete')
-        ->name('fee-cycles.destroy');    
+        ->name('fee-cycles.destroy');   
+
+    Route::post('/fees/setup/cycles/reorder', [FeeCycleController::class, 'reorder'])
+    ->middleware('permission:fee-cycle.edit')
+    ->name('fee-cycles.reorder');
+     
 
     Route::get(
         '/fees/setup/component-groups',
@@ -3691,3 +3704,5 @@ Route::middleware(['auth','role:Admin|Super Admin'])->prefix('hr-payroll/attenda
 
 
 
+// RBAC administration routes
+require __DIR__.'/access.php';

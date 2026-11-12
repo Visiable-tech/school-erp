@@ -206,53 +206,10 @@ class StudentAdmissionController extends Controller
                 |--------------------------------------------------------------------------
                 */
 
-                $year = Carbon::parse(
-                    $validated['admission_date']
-                )->format('Y');
-
-
-                $prefix =
-                    'ADM-' .
-                    $year .
-                    '-';
-
-
-                $lastAdmissionNo =
-                    Student::where(
-                        'school_id',
-                        $schoolId
-                    )
-                    ->where(
-                        'admission_no',
-                        'like',
-                        $prefix . '%'
-                    )
-                    ->orderByDesc(
-                        'admission_no'
-                    )
-                    ->value(
-                        'admission_no'
-                    );
-
-
-                $lastSequence =
-                    $lastAdmissionNo
-                        ? (int) substr(
-                            $lastAdmissionNo,
-                            -5
-                        )
-                        : 0;
-
-
-                $admissionNo =
-                    $prefix .
-                    str_pad(
-                        $lastSequence + 1,
-                        5,
-                        '0',
-                        STR_PAD_LEFT
-                    );
-
+                $admissionNo = app(\App\Services\AdmissionNumberGenerator::class)->generate(
+                    (int) $schoolId,
+                    (int) $admissionApplication->academic_year_id
+                );
 
                 /*
                 |--------------------------------------------------------------------------

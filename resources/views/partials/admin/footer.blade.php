@@ -8,15 +8,7 @@
 
             &copy; {{ date('Y') }}
 
-            @if(auth()->user()->school)
-
-                {{ auth()->user()->school->school_name }}
-
-            @else
-
-                School ERP
-
-            @endif
+            {{ auth()->user()?->school?->school_name ?? 'School ERP' }}
 
         </div>
 

@@ -51,7 +51,7 @@
 
                     <i class="bi bi-person-circle me-1"></i>
 
-                    {{ auth()->user()->name }}
+                    {{ auth()->user()?->name ?? 'ERP User' }}
 
                 </button>
 
@@ -69,9 +69,7 @@
                             <br>
 
                             <strong>
-                                {{ auth()->user()
-                                    ->getRoleNames()
-                                    ->implode(', ') }}
+                                {{ auth()->user()?->getRoleNames()->implode(', ') ?? 'Guest' }}
                             </strong>
 
                         </span>

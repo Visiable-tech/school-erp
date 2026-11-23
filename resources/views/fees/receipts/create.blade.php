@@ -42,7 +42,7 @@
 
                 <div class="row g-3">
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
 
                         <label class="form-label">
                             Academic Year
@@ -74,7 +74,21 @@
                     </div>
 
 
-                    <div class="col-md-5">
+                    <div class="col-md-3">
+                        <label class="form-label">Class <span class="text-danger">*</span></label>
+                        <select id="class_selector" class="form-select" required disabled>
+                            <option value="">Select Academic Year First</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Section <span class="text-danger">*</span></label>
+                        <select id="section_selector" class="form-select" required disabled>
+                            <option value="">Select Class First</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
 
                         <label class="form-label">
                             Student
@@ -429,6 +443,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const year = document.getElementById('academic_year_id');
     const student = document.getElementById('student_selector');
+    const classSelector = document.getElementById('class_selector');
+    const sectionSelector = document.getElementById('section_selector');
+    let enrolledStudents = [];
+    let studentRequestId = 0;
 
     const studentId = document.getElementById('student_id');
     const enrollmentId = document.getElementById('student_enrollment_id');
@@ -463,133 +481,89 @@ document.addEventListener('DOMContentLoaded', function () {
     |--------------------------------------------------------------------------
     */
 
-    year.addEventListener('change', loadStudents);
+    function setOptions(select, placeholder, items) {
+        select.innerHTML = '';
+        select.add(new Option(placeholder, ''));
+        items.forEach(item => select.add(new Option(item.label, String(item.value))));
+        select.disabled = items.length === 0;
+    }
 
-
-    async function loadStudents() {
-
+    function clearStudentSelection() {
         studentId.value = '';
         enrollmentId.value = '';
-
-        student.disabled = true;
-
-        student.innerHTML =
-            '<option value="">Loading Students...</option>';
-
+        setOptions(student, 'Select Student', []);
         resetDues();
+    }
 
+    function uniqueOptions(rows, idKey, nameKey) {
+        const map = new Map();
+        rows.forEach(row => {
+            if (row[idKey] !== null && row[idKey] !== undefined && row[idKey] !== '') {
+                map.set(String(row[idKey]), row[nameKey] || String(row[idKey]));
+            }
+        });
+        return Array.from(map, ([value, label]) => ({value, label}))
+            .sort((a, b) => a.label.localeCompare(b.label, undefined, {numeric: true}));
+    }
 
-        if (!year.value) {
+    year.addEventListener('change', loadStudents);
 
-            student.innerHTML =
-                '<option value="">Select Academic Year First</option>';
-
-            return;
-        }
-
+    async function loadStudents() {
+        const requestId = ++studentRequestId;
+        enrolledStudents = [];
+        clearStudentSelection();
+        setOptions(classSelector, year.value ? 'Loading Classes...' : 'Select Academic Year First', []);
+        setOptions(sectionSelector, 'Select Class First', []);
+        if (!year.value) return;
 
         try {
-
             const response = await fetch(
-                "{{ route('fee-receipts.students') }}"
-                + '?academic_year_id='
-                + encodeURIComponent(year.value),
-                {
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                }
+                "{{ route('fee-receipts.students') }}" + '?' + new URLSearchParams({
+                    academic_year_id: year.value
+                }),
+                {headers: {'Accept': 'application/json'}}
             );
-
-
-            if (!response.ok) {
-                throw new Error('Unable to load students.');
-            }
-
-
+            if (!response.ok) throw new Error('Unable to load students');
             const rows = await response.json();
-
-
-            student.innerHTML =
-                '<option value="">Select Student</option>';
-
-
-            rows.forEach(function(row) {
-
-                const option =
-                    document.createElement('option');
-
-                option.value =
-                    row.student_id;
-
-                option.dataset.enrollment =
-                    row.enrollment_id;
-
-
-                let text =
-                    row.student_name;
-
-
-                if (row.admission_no) {
-                    text += ' - ' + row.admission_no;
-                }
-
-
-                if (row.class_name) {
-                    text += ' | ' + row.class_name;
-                }
-
-
-                if (row.section_name) {
-                    text += ' - ' + row.section_name;
-                }
-
-
-                option.textContent = text;
-
-                student.appendChild(option);
-            });
-
-
-            student.disabled = false;
-
+            if (requestId !== studentRequestId) return;
+            enrolledStudents = rows;
+            setOptions(classSelector, 'Select Class', uniqueOptions(rows, 'class_id', 'class_name'));
         } catch (error) {
-
-            student.innerHTML =
-                '<option value="">Unable to load students</option>';
-
+            if (requestId !== studentRequestId) return;
+            setOptions(classSelector, 'Unable to load classes', []);
             console.error(error);
         }
     }
 
+    classSelector.addEventListener('change', function () {
+        clearStudentSelection();
+        const rows = enrolledStudents.filter(row => String(row.class_id) === classSelector.value);
+        setOptions(sectionSelector, 'Select Section', uniqueOptions(rows, 'section_id', 'section_name'));
+    });
 
-    /*
-    |--------------------------------------------------------------------------
-    | STUDENT CHANGE
-    |--------------------------------------------------------------------------
-    */
+    sectionSelector.addEventListener('change', function () {
+        clearStudentSelection();
+        if (!classSelector.value || !sectionSelector.value) return;
+        const rows = enrolledStudents.filter(row =>
+            String(row.class_id) === classSelector.value &&
+            String(row.section_id) === sectionSelector.value
+        );
+        const options = rows.map(row => ({
+            value: row.enrollment_id,
+            label: (row.student_name || '-') +
+                (row.admission_no ? ' - ' + row.admission_no : '')
+        })).sort((a, b) => a.label.localeCompare(b.label));
+        setOptions(student, 'Select Student', options);
+    });
 
     student.addEventListener('change', function () {
-
-        const option =
-            student.options[
-                student.selectedIndex
-            ];
-
-
-        studentId.value =
-            student.value || '';
-
-
-        enrollmentId.value =
-            option
-                ? option.dataset.enrollment || ''
-                : '';
-
-
+        const row = enrolledStudents.find(item => String(item.enrollment_id) === student.value);
+        studentId.value = row ? row.student_id : '';
+        enrollmentId.value = row ? row.enrollment_id : '';
         loadDues();
     });
 
+    if (year.value) loadStudents();
 
     /*
     |--------------------------------------------------------------------------

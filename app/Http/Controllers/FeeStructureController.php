@@ -6,6 +6,7 @@ use App\Models\AcademicYear;
 use App\Models\FeeHead;
 use App\Models\FeeStructure;
 use App\Models\FeeStructureItem;
+use App\Services\FeeInstallmentGenerator;
 use App\Models\SchoolClass;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -185,6 +186,8 @@ class FeeStructureController extends Controller
                     'status' => true,
                 ]);
             }
+
+            app(FeeInstallmentGenerator::class)->generate($structure);
         });
 
         return redirect()
@@ -347,6 +350,8 @@ class FeeStructureController extends Controller
                     'status' => true,
                 ]);
             }
+
+            app(FeeInstallmentGenerator::class)->generate($feeStructure);
         });
 
         return redirect()

@@ -36,92 +36,50 @@
 
             <form method="GET">
 
-                <div class="row g-3">
-
-                    <div class="col-md-3">
-
-                        <select name="academic_year_id"
-                                class="form-select">
-
-                            <option value="">
-                                All Academic Years
-                            </option>
-
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-2">
+                        <label class="form-label">Academic Year</label>
+                        <select name="academic_year_id" id="receipt_year" class="form-select">
+                            <option value="">All Academic Years</option>
                             @foreach($academicYears as $year)
-
-                                <option value="{{ $year->id }}"
-                                    {{ request('academic_year_id') == $year->id ? 'selected' : '' }}>
-
-                                    {{ $year->name }}
-
-                                </option>
-
+                                <option value="{{ $year->id }}" @selected(request('academic_year_id') == $year->id)>{{ $year->name }}</option>
                             @endforeach
-
                         </select>
-
                     </div>
-
-
-                    <div class="col-md-3">
-
-                        <input type="text"
-                               name="student"
-                               class="form-control"
-                               placeholder="Student / Admission No."
-                               value="{{ request('student') }}">
-
-                    </div>
-
-
                     <div class="col-md-2">
-
-                        <input type="text"
-                               name="receipt_no"
-                               class="form-control"
-                               placeholder="Receipt No."
-                               value="{{ request('receipt_no') }}">
-
-                    </div>
-
-
-                    <div class="col-md-2">
-
-                        <select name="status"
-                                class="form-select">
-
-                            <option value="">
-                                All Status
-                            </option>
-
-                            <option value="posted"
-                                {{ request('status') == 'posted' ? 'selected' : '' }}>
-                                Posted
-                            </option>
-
-                            <option value="cancelled"
-                                {{ request('status') == 'cancelled' ? 'selected' : '' }}>
-                                Cancelled
-                            </option>
-
+                        <label class="form-label">Class</label>
+                        <select name="school_class_id" id="receipt_class" class="form-select">
+                            <option value="">All Classes</option>
                         </select>
-
                     </div>
-
-
                     <div class="col-md-2">
-
-                        <button class="btn btn-primary">
-                            Filter
-                        </button>
-
-                        <a href="{{ route('fee-receipts.index') }}"
-                           class="btn btn-light">
-                            Reset
-                        </a>
-
+                        <label class="form-label">Section</label>
+                        <select name="section_id" id="receipt_section" class="form-select">
+                            <option value="">All Sections</option>
+                        </select>
                     </div>
-
+                    <div class="col-md-2">
+                        <label class="form-label">Student / Admission No.</label>
+                        <input type="text" name="student" class="form-control"
+                               placeholder="Student / Admission No." value="{{ request('student') }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Receipt No.</label>
+                        <input type="text" name="receipt_no" class="form-control"
+                               placeholder="Receipt No." value="{{ request('receipt_no') }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            <option value="">All Status</option>
+                            <option value="posted" @selected(request('status') == 'posted')>Posted</option>
+                            <option value="cancelled" @selected(request('status') == 'cancelled')>Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="col-12 d-flex justify-content-end gap-2">
+                        <button class="btn btn-primary" type="submit">Filter</button>
+                        <a href="{{ route('fee-receipts.index') }}" class="btn btn-light">Reset</a>
+                    </div>
                 </div>
 
             </form>
@@ -288,5 +246,44 @@
     </div>
 
 </div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const options = {{ Illuminate\Support\Js::from($enrollmentOptions) }};
+    const year = document.getElementById('receipt_year');
+    const classEl = document.getElementById('receipt_class');
+    const section = document.getElementById('receipt_section');
+    const initialClass = @json((string) request('school_class_id', ''));
+    const initialSection = @json((string) request('section_id', ''));
+
+    function fill(select, placeholder, records, idField, labelField, selected) {
+        select.replaceChildren(new Option(placeholder, ''));
+        const unique = new Map();
+        records.forEach(row => {
+            if (row[idField] !== null && row[idField] !== undefined) {
+                unique.set(String(row[idField]), String(row[labelField]));
+            }
+        });
+        [...unique].sort((a,b) => a[1].localeCompare(b[1], undefined, {numeric:true}))
+            .forEach(([id,label]) => select.add(new Option(label, id)));
+        select.value = selected || '';
+    }
+    function updateSections(selected = '') {
+        const records = options.filter(row =>
+            (!year.value || String(row.year_id) === year.value) &&
+            (!classEl.value || String(row.class_id) === classEl.value));
+        fill(section, 'All Sections', records, 'section_id', 'section_name', selected);
+    }
+    function updateClasses(selected = '', selectedSection = '') {
+        const records = options.filter(row => !year.value || String(row.year_id) === year.value);
+        fill(classEl, 'All Classes', records, 'class_id', 'class_name', selected);
+        updateSections(selectedSection);
+    }
+    year.addEventListener('change', () => updateClasses());
+    classEl.addEventListener('change', () => updateSections());
+    updateClasses(initialClass, initialSection);
+});
+</script>
 
 @endsection

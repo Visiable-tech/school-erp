@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Admission Application')
+@section('title', 'New Registration')
 
 @section('content')
 
@@ -8,7 +8,7 @@
 
     <div>
         <h4 class="mb-1">
-            Admission Application
+            New Registration
         </h4>
 
         <div class="text-muted">
@@ -50,7 +50,7 @@
                 type="submit"
             >
                 <i class="bi bi-check-lg"></i>
-                Submit Application
+                Submit Registration
             </button>
 
         </div>

@@ -43,93 +43,64 @@ class FeeReceiptController extends Controller
     {
         $schoolId = Auth::user()->school_id;
 
+        $validated = $request->validate([
+            'academic_year_id' => 'nullable|integer',
+            'school_class_id' => 'nullable|integer',
+            'section_id' => 'nullable|integer',
+            'student' => 'nullable|string|max:255',
+            'receipt_no' => 'nullable|string|max:100',
+            'status' => 'nullable|in:posted,cancelled',
+        ]);
 
-        $academicYears = AcademicYear::where(
-                'school_id',
-                $schoolId
-            )
-            ->orderByDesc('start_date')
-            ->get();
+        $academicYears = AcademicYear::where('school_id', $schoolId)
+            ->orderByDesc('start_date')->get();
 
+        // These are enrollment records, not students' current class/section.
+        // The receipt itself references student_enrollment_id.
+        $enrollmentOptions = StudentEnrollment::with(['schoolClass', 'section'])
+            ->where('school_id', $schoolId)
+            ->get(['id', 'academic_year_id', 'school_class_id', 'section_id'])
+            ->map(fn ($e) => [
+                'year_id' => $e->academic_year_id,
+                'class_id' => $e->school_class_id,
+                'class_name' => $e->schoolClass?->name ?? ('Class #' . $e->school_class_id),
+                'section_id' => $e->section_id,
+                'section_name' => $e->section?->name ?? ('Section #' . $e->section_id),
+            ])->unique(fn ($e) => $e['year_id'].'-'.$e['class_id'].'-'.$e['section_id'])->values();
 
         $receipts = FeeCollection::with([
-                'student',
-                'academicYear',
-                'paymentMode',
-                'collector',
+                'student', 'academicYear', 'paymentMode', 'collector',
+                'enrollment.schoolClass', 'enrollment.section',
             ])
-            ->where(
-                'school_id',
-                $schoolId
-            )
+            ->where('school_id', $schoolId)
+            ->when($validated['academic_year_id'] ?? null,
+                fn ($q, $v) => $q->where('academic_year_id', $v))
+            ->when($validated['school_class_id'] ?? null,
+                fn ($q, $v) => $q->whereIn('student_enrollment_id',
+                    StudentEnrollment::query()->select('id')
+                        ->where('school_id', $schoolId)
+                        ->where('school_class_id', $v)))
+            ->when($validated['section_id'] ?? null,
+                fn ($q, $v) => $q->whereIn('student_enrollment_id',
+                    StudentEnrollment::query()->select('id')
+                        ->where('school_id', $schoolId)
+                        ->where('section_id', $v)))
+            ->when($validated['status'] ?? null,
+                fn ($q, $v) => $q->where('status', $v))
+            ->when($validated['receipt_no'] ?? null,
+                fn ($q, $v) => $q->where('receipt_no', 'like', '%' . $v . '%'))
+            ->when($validated['student'] ?? null, function ($q, $v) {
+                $q->whereHas('student', fn ($sq) => $sq
+                    ->where('student_name', 'like', '%' . $v . '%')
+                    ->orWhere('admission_no', 'like', '%' . $v . '%'));
+            })
+            ->orderByDesc('payment_date')->orderByDesc('id')
+            ->paginate(20)->withQueryString();
 
-            ->when(
-                $request->academic_year_id,
-                fn ($query, $value) =>
-                    $query->where(
-                        'academic_year_id',
-                        $value
-                    )
-            )
-
-            ->when(
-                $request->status,
-                fn ($query, $value) =>
-                    $query->where(
-                        'status',
-                        $value
-                    )
-            )
-
-            ->when(
-                $request->receipt_no,
-                fn ($query, $value) =>
-                    $query->where(
-                        'receipt_no',
-                        'like',
-                        '%' . $value . '%'
-                    )
-            )
-
-            ->when(
-                $request->student,
-                function ($query, $value) {
-
-                    $query->whereHas(
-                        'student',
-                        function ($studentQuery) use ($value) {
-
-                            $studentQuery
-                                ->where(
-                                    'student_name',
-                                    'like',
-                                    '%' . $value . '%'
-                                )
-                                ->orWhere(
-                                    'admission_no',
-                                    'like',
-                                    '%' . $value . '%'
-                                );
-                        }
-                    );
-                }
-            )
-
-            ->orderByDesc('payment_date')
-            ->orderByDesc('id')
-            ->paginate(20)
-            ->withQueryString();
-
-
-        return view(
-            'fees.receipts.index',
-            compact(
-                'academicYears',
-                'receipts'
-            )
-        );
+        return view('fees.receipts.index', compact(
+            'academicYears', 'receipts', 'enrollmentOptions'
+        ));
     }
-
 
     /*
     |--------------------------------------------------------------------------
@@ -244,6 +215,12 @@ class FeeReceiptController extends Controller
                         'admission_no' =>
                             $enrollment->student->admission_no
                             ?? '',
+
+                        'class_id' =>
+                            $enrollment->school_class_id,
+
+                        'section_id' =>
+                            $enrollment->section_id,
 
                         'class_name' =>
                             $enrollment->schoolClass->name

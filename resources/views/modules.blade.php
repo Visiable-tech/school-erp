@@ -69,6 +69,34 @@
                 </a>
             </div>
         @endif
+        {{-- Transport Fee Management --}}
+        @if((auth()->user()?->hasAnyRole(['Admin','Super Admin']) ?? false) && \Illuminate\Support\Facades\Route::has('transport.index'))
+            <div class="erp-module-tile">
+                <a href="{{ route('transport.index') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
+                    <i class="bi bi-bus-front erp-module-icon"></i>
+                    <span>Transport Fee Management</span>
+                </a>
+            </div>
+        @endif
+        {{-- Employee Information System --}}
+        @if((auth()->user()?->hasAnyRole(['Admin','Super Admin'])) && \Illuminate\Support\Facades\Route::has('employee-info.dashboard'))
+
+            <div class="erp-module-tile">
+
+                <a href="{{ route('employee-info.dashboard') }}"
+                class="erp-module-card text-decoration-none
+                        d-flex flex-column align-items-center
+                        justify-content-center h-100">
+
+                    <i class="bi bi-person-vcard erp-module-icon"></i>
+
+                    <span>Employee Information System</span>
+
+                </a>
+
+            </div>
+
+        @endif
         @if((auth()->user()?->hasAnyRole(['Admin','Super Admin'])) && \Illuminate\Support\Facades\Route::has('hr-payroll.attendance.daily'))
             <div class="erp-module-tile">
                 <a href="{{ route('hr-payroll.attendance.daily') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
@@ -178,22 +206,6 @@
                 <a href="{{ route('teacher.performance.team') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
                     <i class="bi bi-clipboard-data erp-module-icon"></i>
                     <span>Employee Assessment</span>
-                </a>
-            </div>
-        @endif
-        @if((auth()->user()?->hasAnyRole(['Admin','Super Admin'])) && \Illuminate\Support\Facades\Route::has('hr-payroll.processing.runs'))
-            <div class="erp-module-tile">
-                <a href="{{ route('hr-payroll.processing.runs') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
-                    <i class="bi bi-receipt erp-module-icon"></i>
-                    <span>Salary Processing</span>
-                </a>
-            </div>
-        @endif
-        @if((auth()->user()?->hasAnyRole(['Admin','Super Admin'])) && \Illuminate\Support\Facades\Route::has('hr-payroll.processing.advances'))
-            <div class="erp-module-tile">
-                <a href="{{ route('hr-payroll.processing.advances') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
-                    <i class="bi bi-currency-rupee erp-module-icon"></i>
-                    <span>Salary Advances</span>
                 </a>
             </div>
         @endif

@@ -64,6 +64,7 @@ use App\Http\Controllers\CompositeConcessionController;
 use App\Http\Controllers\FeeReceiptController;
 use App\Http\Controllers\FeeRefundController;
 use App\Http\Controllers\FeeChequeDdDetailController;
+use App\Http\Controllers\TransportFeeController;
 
 use App\Http\Controllers\TcReasonController;
 use App\Http\Controllers\TcRemarkOptionController;
@@ -98,6 +99,13 @@ use App\Http\Controllers\ModuleDashboardController;
 use App\Http\Controllers\HrPayrollMasterController;
 use App\Http\Controllers\HrPayrollProcessingController;
 use App\Http\Controllers\HrAttendancePhase3Controller;
+
+
+use App\Http\Controllers\EmployeeInformationController as EIC;
+
+use App\Http\Controllers\StudentAppLoginController;
+
+use App\Http\Controllers\UserActivityLogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -3703,6 +3711,36 @@ Route::middleware(['auth','role:Admin|Super Admin'])->prefix('hr-payroll/attenda
  });
 
 
+Route::prefix('employee-information')->name('employee-info.')->group(function(){
+ Route::get('/dashboard',[EIC::class,'dashboard'])->name('dashboard');
+ Route::get('/employees',[EIC::class,'index'])->name('index');
+ Route::get('/employees/create',[EIC::class,'create'])->name('create');
+ Route::post('/employees',[EIC::class,'store'])->name('store');
+ Route::get('/employees/{id}/edit',[EIC::class,'edit'])->whereNumber('id')->name('edit');
+ Route::put('/employees/{id}',[EIC::class,'update'])->whereNumber('id')->name('update');
+ Route::delete('/employees/{id}',[EIC::class,'destroy'])->whereNumber('id')->name('destroy');
+ Route::get('/certificates',[EIC::class,'certificates'])->name('certificates');
+ Route::post('/certificates',[EIC::class,'certificateStore'])->name('certificates.store');
+ Route::get('/certificates/{id}/download',[EIC::class,'certificateDownload'])->whereNumber('id')->name('certificates.download');
+ Route::delete('/certificates/{id}',[EIC::class,'certificateDestroy'])->whereNumber('id')->name('certificates.destroy');
+ Route::get('/reports',[EIC::class,'reports'])->name('reports');
+ Route::get('/{type}',[EIC::class,'eventIndex'])->name('events');
+ Route::post('/{type}',[EIC::class,'eventStore'])->name('events.store');
+ Route::delete('/{type}/{id}',[EIC::class,'eventDestroy'])->whereNumber('id')->name('events.destroy');
+}); 
+
+
+Route::get('/transport-fees', [\App\Http\Controllers\TransportFeeController::class,'index'])->name('transport.index');
+Route::post('/transport-fees/routes', [\App\Http\Controllers\TransportFeeController::class,'saveRoute'])->name('transport.routes.save');
+Route::post('/transport-fees/assign', [\App\Http\Controllers\TransportFeeController::class,'assign'])->name('transport.assign');
+
+Route::post('/transport-fees/stops', [\App\Http\Controllers\TransportFeeController::class,'saveStop'])->name('transport.stops.save');
+
+
+Route::get('/user-management/activity-logs', [UserActivityLogController::class, 'index'])->name('user-activity-logs.index');
+Route::get('/user-management/activity-logs/export', [UserActivityLogController::class, 'export'])->name('user-activity-logs.export');
 
 // RBAC administration routes
 require __DIR__.'/access.php';
+
+

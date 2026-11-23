@@ -14,6 +14,10 @@
         <a href="{{ route('access.roles.index') }}"><i class="bi bi-shield-lock"></i> Roles & Permissions</a>
         @endrole
 
+        @role('Super Admin')
+        <a href="{{ route('user-activity-logs.index') }}"><i class="bi bi-person-badge"></i> User Activity</a>
+        @endrole
+
 
         <a href="#">
 

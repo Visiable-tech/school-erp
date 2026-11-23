@@ -361,7 +361,7 @@
                                                 $enquiry
                                             ) }}"
                                             class="btn btn-sm btn-outline-dark"
-                                            title="Create Application"
+                                            title="Convert Enquiry to Registration"
                                         >
                                             <i class="bi bi-file-earmark-plus"></i>
                                         </a>
@@ -374,7 +374,7 @@
                                                 $enquiry->application
                                             ) }}"
                                             class="btn btn-sm btn-outline-info"
-                                            title="View Application"
+                                            title="View Registration"
                                         >
                                             <i class="bi bi-file-earmark-text"></i>
                                         </a>

@@ -1,22 +1,32 @@
 @extends('layouts.admin')
 
-@section('title', 'Admission Applications')
+@section('title', 'Registrations')
 
 @section('content')
 
 <div class="mb-4">
 
     <h4 class="mb-1">
-        Admission Applications
+        Registrations
     </h4>
 
     <div class="text-muted">
-        Manage submitted admission applications
+        Manage registrations, approvals and confirmed admissions
     </div>
 
 </div>
 
 
+<div class="row g-3 mb-4">
+    @foreach([
+      ['label'=>'Total Registrations','value'=>\App\Models\AdmissionApplication::where('school_id',auth()->user()->school_id)->count(),'icon'=>'bi-journal-check','color'=>'primary'],
+      ['label'=>'Awaiting Review','value'=>\App\Models\AdmissionApplication::where('school_id',auth()->user()->school_id)->whereIn('application_status',['submitted','under_review'])->count(),'icon'=>'bi-hourglass-split','color'=>'warning'],
+      ['label'=>'Approved','value'=>\App\Models\AdmissionApplication::where('school_id',auth()->user()->school_id)->where('application_status','approved')->count(),'icon'=>'bi-patch-check','color'=>'success'],
+      ['label'=>'Admitted','value'=>\App\Models\AdmissionApplication::where('school_id',auth()->user()->school_id)->where('application_status','admitted')->count(),'icon'=>'bi-mortarboard','color'=>'info'],
+    ] as $metric)
+    <div class="col-12 col-sm-6 col-xl-3"><div class="card border-0 shadow-sm h-100"><div class="card-body d-flex justify-content-between align-items-center"><div><div class="small text-muted">{{ $metric['label'] }}</div><div class="fs-2 fw-bold">{{ number_format($metric['value']) }}</div></div><div class="rounded-3 bg-{{ $metric['color'] }} bg-opacity-10 text-{{ $metric['color'] }} p-3"><i class="bi {{ $metric['icon'] }} fs-4"></i></div></div></div></div>
+    @endforeach
+</div>
 <div class="card border-0 shadow-sm mb-4">
 
     <div class="card-body">
@@ -174,7 +184,7 @@
 
                         <td>
 
-                            <span class="badge bg-secondary">
+                            <span class="badge bg-{{ ['approved'=>'success','admitted'=>'info','rejected'=>'danger','under_review'=>'warning','submitted'=>'primary'][$application->application_status] ?? 'secondary' }}">
 
                                 {{
                                     ucwords(
@@ -207,6 +217,15 @@
 
                             @endcan
 
+                            @if($application->application_status === 'approved' && !$application->student)
+                                @can('student-admission.create')
+                                    <a href="{{ route('student-admissions.create', $application) }}" class="btn btn-sm btn-success ms-1" title="Complete Admission"><i class="bi bi-person-check"></i> Admit</a>
+                                @endcan
+                            @elseif($application->student)
+                                @can('student.view')
+                                    <a href="{{ route('students.show', $application->student) }}" class="btn btn-sm btn-outline-success ms-1" title="View Student"><i class="bi bi-person-vcard"></i></a>
+                                @endcan
+                            @endif
                         </td>
 
                     </tr>

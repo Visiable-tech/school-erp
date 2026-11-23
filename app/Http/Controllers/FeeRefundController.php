@@ -115,7 +115,7 @@ class FeeRefundController extends Controller
 
 
         return view(
-            'admin.fees.refunds.index',
+            'fees.refunds.index',
             compact(
                 'academicYears',
                 'refunds'
@@ -144,7 +144,7 @@ class FeeRefundController extends Controller
 
 
         return view(
-            'admin.fees.refunds.create',
+            'fees.refunds.create',
             compact('academicYears')
         );
     }
@@ -1063,7 +1063,7 @@ class FeeRefundController extends Controller
 
 
         return view(
-            'admin.fees.refunds.show',
+            'fees.refunds.show',
             compact('feeRefund')
         );
     }
@@ -1104,7 +1104,7 @@ class FeeRefundController extends Controller
 
 
         return view(
-            'admin.fees.refunds.print',
+            'fees.refunds.print',
             compact('feeRefund')
         );
     }

@@ -18,7 +18,37 @@
  @forelse($assignments as $item)
  <tr><td>{{ $assignments->firstItem()+$loop->index }}</td><td>{{ $item->teacher?->name }}</td><td>{{ $item->academicYear?->name }}</td><td>{{ $item->schoolClass?->name }}</td><td>{{ $item->section?->name }}</td><td>{{ $item->subject?->name ?? 'General / All' }}</td><td>{{ $item->is_class_teacher ? 'Yes':'No' }}</td><td><span class="badge {{ $item->status ? 'bg-success':'bg-secondary' }}">{{ $item->status ? 'Active':'Inactive' }}</span></td>
  <td class="text-nowrap">@can('teacher-assignment.edit')<a href="{{ route('teacher-assignments.edit',$item) }}" class="btn btn-sm btn-outline-primary">Edit</a>@endcan
- @can('teacher-assignment.delete')<form method="POST" action="{{ route('teacher-assignments.destroy',$item) }}" class="d-inline" onsubmit="return confirm('Remove this assignment?')">@csrf @method('DELETE')<button class="btn btn-sm btn-outline-danger">Delete</button></form>@endcan</td></tr>
+ @if($item->status == 1)
+
+    @can('teacher-assignment.delete')
+
+        <form action="{{ route('teacher-assignments.destroy', $item->id) }}"
+              method="POST"
+              class="d-inline"
+              onsubmit="return confirm('Are you sure you want to deactivate this assignment?')">
+
+            @csrf
+            @method('DELETE')
+
+            <button type="submit"
+                    class="btn btn-warning btn-sm">
+
+                <i class="fas fa-ban"></i>
+                Deactivate
+
+            </button>
+
+        </form>
+
+    @endcan
+
+@else
+
+    <span class="badge bg-secondary">
+        Inactive
+    </span>
+
+@endif</td></tr>
  @empty<tr><td colspan="9" class="text-center text-muted">No teacher assignments found.</td></tr>@endforelse
  </tbody></table></div>
  {{ $assignments->links() }}

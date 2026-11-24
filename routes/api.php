@@ -19,3 +19,6 @@ Route::prefix('student')
         Route::post('/change-password', [StudentAuthController::class, 'changePassword']);
         Route::post('/logout', [StudentAuthController::class, 'logout']);
     });
+
+
+require __DIR__.'/teacher_api.php';    

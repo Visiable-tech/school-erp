@@ -128,7 +128,11 @@ class TeacherAssignmentController extends Controller
     public function destroy(Request $request, TeacherAssignment $assignment)
     {
         abort_unless((int)$assignment->school_id === $this->school($request), 404);
-        $assignment->delete();
-        return redirect()->route('teacher-assignments.index')->with('success','Teacher assignment removed.');
+        $assignment->update([
+            'status' => 0
+        ]);
+        return redirect()
+            ->route('teacher-assignments.index')
+            ->with('success', 'Teacher assignment deactivated successfully.');
     }
 }

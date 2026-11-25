@@ -3743,4 +3743,14 @@ Route::get('/user-management/activity-logs/export', [UserActivityLogController::
 // RBAC administration routes
 require __DIR__.'/access.php';
 
+require __DIR__.'/accounts.php';
+
+require __DIR__.'/accounts_vendors.php';
+
+require __DIR__.'/accounts_salary.php';
+
+require __DIR__.'/accounts_ledger.php';
+
+require __DIR__.'/accounts_reports.php';
+
 

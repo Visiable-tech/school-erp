@@ -61,15 +61,23 @@
                 </a>
             </div>
         @endif
-        @if((auth()->user()?->can('fee-head.view') ?? false) && \Illuminate\Support\Facades\Route::has('fees.dashboard'))
+        @php
+    $financeLanding = null;
+    if ((auth()->user()?->can('fee-head.view') ?? false) && \Illuminate\Support\Facades\Route::has('fees.dashboard')) {
+        $financeLanding = 'fees.dashboard';
+    } elseif ((auth()->user()?->can('accounts.view') ?? false) && \Illuminate\Support\Facades\Route::has('accounts.index')) {
+        $financeLanding = 'accounts.index';
+    }
+@endphp
+@if($financeLanding)
             <div class="erp-module-tile">
-                <a href="{{ route('fees.dashboard') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
+                <a href="{{ route($financeLanding) }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
                     <i class="bi bi-cash-stack erp-module-icon"></i>
-                    <span>Fee Management</span>
+                    <span>Accounts &amp; Fee Management</span>
                 </a>
             </div>
         @endif
-        {{-- Transport Fee Management --}}
+{{-- Transport Fee Management --}}
         @if((auth()->user()?->hasAnyRole(['Admin','Super Admin']) ?? false) && \Illuminate\Support\Facades\Route::has('transport.index'))
             <div class="erp-module-tile">
                 <a href="{{ route('transport.index') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">

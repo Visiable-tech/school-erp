@@ -770,5 +770,5 @@
         @endcanany
 
 
-
+@include('accounts.sidebar')
         

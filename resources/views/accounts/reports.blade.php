@@ -1,0 +1,10 @@
+@extends('accounts.shell')
+@section('accounts_content')
+<style>@media print {body *{visibility:hidden} #report-print,#report-print *{visibility:visible} #report-print{position:absolute;left:0;top:0;width:100%;background:white;color:black} #report-print .table-responsive{overflow:visible} @page{size:landscape;margin:12mm}}</style>
+<h4>Advanced Accounts Reports</h4>
+<form method="GET" action="{{ route('accounts.reports.index') }}" class="row g-2 mb-3">
+<div class="col-md-4"><label>Report</label><select class="form-select" name="report">@foreach($names as $key=>$name)<option value="{{ $key }}" @selected($report===$key)>{{ $name }}</option>@endforeach</select></div>
+<div class="col-md-2"><label>From</label><input type="date" name="from" class="form-control" value="{{ $from }}"></div><div class="col-md-2"><label>To / As of</label><input type="date" name="to" class="form-control" value="{{ $to }}"></div>
+<div class="col-md-3"><label>Ledger account (books only)</label><select name="account_id" class="form-select"><option value="">All</option>@foreach($accounts as $a)<option value="{{ $a->id }}" @selected(($v['account_id']??null)==$a->id)>{{ $a->code }} {{ $a->name }}</option>@endforeach</select></div><div class="col-12"><button class="btn btn-success">Generate</button> <button name="format" value="csv" class="btn btn-outline-success">Export CSV (Excel)</button> <button type="button" onclick="window.print()" class="btn btn-outline-secondary">Print / Save PDF</button></div></form>
+<div id="report-print" class="card p-3"><h4>{{ $names[$report] }}</h4><p>{{ $from }} to {{ $to }} | School ID: {{ auth()->user()->school_id }}</p>@if($note)<p class="small">{{ $note }}</p>@endif<div class="table-responsive"><table class="table table-bordered table-striped"><thead><tr>@foreach($headers as $h)<th>{{ $h }}</th>@endforeach</tr></thead><tbody>@forelse($rows as $row)<tr>@foreach($row as $cell)<td>{{ $cell }}</td>@endforeach</tr>@empty<tr><td colspan="{{ count($headers) }}">No records found.</td></tr>@endforelse</tbody></table></div></div>
+@endsection

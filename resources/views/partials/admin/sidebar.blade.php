@@ -10,13 +10,15 @@
             $routeName = \Illuminate\Support\Facades\Route::currentRouteName() ?? '';
             $path = request()->path();
             $module = 'administration';
-            if (str_starts_with($routeName, 'employee-information.') || request()->is('employee-information', 'employee-information/*')) {
+            if (request()->is('accounts', 'accounts/*') || str_starts_with($routeName, 'accounts.')) {
+                $module = 'fees';
+            } elseif (str_starts_with($routeName, 'employee-info.') || str_starts_with($routeName, 'employee-information.') || request()->is('employee-information', 'employee-information/*')) {
                 $module = 'employee';
             } elseif (str_starts_with($routeName, 'hr-payroll.') || str_starts_with($path, 'hr-payroll/') || str_starts_with($routeName, 'teacher.payroll.') || str_starts_with($routeName, 'teacher.staff-attendance.')) {
                 $module = 'hr';
             } elseif (str_starts_with($routeName, 'teacher.') || str_starts_with($routeName, 'teacher-assignments.') || str_starts_with($path, 'teacher/')) {
                 $module = 'teacher';
-            } elseif (request()->is('fees', 'fees/*') || str_starts_with($routeName, 'fees.') || preg_match('/^(fee-|fee_|fee\.|student-fee|optional-fee|concession-|fine-waiver|composite-concession|cheque-dd)/', $routeName)) {
+            } elseif (request()->is('fees', 'fees/*') || str_starts_with($routeName, 'fees.') || request()->routeIs('bank-masters.*', 'school-accounts.*', 'misc-fee-components.*', 'late-fee-fines.*', 'payment-modes.*', 'cheque-bounce-reasons.*') || preg_match('/^(fee-|fee_|fee\.|student-fee|optional-fee|concession-|fine-waiver|composite-concession|cheque-dd)/', $routeName)) {
                 $module = 'fees';
             } elseif (str_starts_with($routeName, 'admission-') || str_starts_with($routeName, 'admission.') || str_starts_with($path, 'admission/')) {
                 $module = 'admission';
@@ -54,7 +56,9 @@
                 @include('partials.admin.menus.students')
             @endif
         @elseif($module === 'fees')
+            <div class="menu-title">Accounts &amp; Fee Management</div>
             @include('partials.admin.menus.fees')
+            @include('accounts.sidebar')
         @elseif($module === 'hr')
             @include('partials.admin.menus.hr')
         @elseif($module === 'operations')

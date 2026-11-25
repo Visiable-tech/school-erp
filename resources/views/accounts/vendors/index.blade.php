@@ -1,0 +1,6 @@
+@extends('accounts.shell')
+@section('accounts_content')
+<h4>Vendor Management</h4><div class="row g-3 mb-3">@foreach(['Approved bills'=>$total,'Paid'=>$paid,'Outstanding'=>$total-$paid] as $label=>$value)<div class="col-md-4"><div class="card card-body"><small>{{ $label }} (all years)</small><h3>₹{{ number_format($value,2) }}</h3></div></div>@endforeach</div>
+@can('accounts.vendor.manage')<div class="card card-body mb-3"><h5>Add vendor</h5><form method="POST" action="{{ route('accounts.vendors.store') }}">@csrf @include('accounts.vendors.form')</form></div>@endcan
+<form class="d-flex gap-2 mb-3"><input class="form-control" name="q" value="{{ request('q') }}" placeholder="Search vendor"><button class="btn btn-outline-success">Search</button></form><div class="table-responsive"><table class="table table-bordered table-hover"><thead><tr><th>Name</th><th>Category</th><th>Phone</th><th>Status</th><th>Action</th></tr></thead><tbody>@forelse($vendors as $vendor)<tr><td>{{ $vendor->name }}</td><td>{{ $vendor->category }}</td><td>{{ $vendor->phone }}</td><td>{{ $vendor->active?'Active':'Inactive' }}</td><td><a class="btn btn-sm btn-outline-success" href="{{ route('accounts.vendors.ledger',$vendor->id) }}">Ledger / invoices</a></td></tr>@empty<tr><td colspan="5">No vendors.</td></tr>@endforelse</tbody></table></div>{{ $vendors->links() }}
+@endsection

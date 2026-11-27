@@ -712,14 +712,7 @@ class StudentManagementController extends Controller
                 if (!$sections->has($target)) {
                     throw ValidationException::withMessages(['changes' => 'Invalid destination section.']);
                 }
-                // Existing section-specific fee assignments require manual reconciliation.
-                if (\Illuminate\Support\Facades\Schema::hasColumn('fee_structures', 'section_id') &&
-                    DB::table('student_fee_dues as d')->join('fee_structures as f', 'f.id', '=', 'd.fee_structure_id')
-                        ->where('d.student_enrollment_id', $enrollment->id)
-                        ->where('d.school_id', $schoolId)->whereNotNull('f.section_id')
-                        ->where('f.section_id', '!=', $target)->exists()) {
-                    throw ValidationException::withMessages(['changes' => 'Enrollment '.$enrollment->id.' has section-specific fees. Reconcile fees before moving.']);
-                }
+                $this->validateSectionFeeCompatibility($enrollment, (int) $target);
                 $enrollment->update(['section_id' => $target, 'roll_no' => null]);
             }
             return $enrollments->count();
@@ -729,6 +722,52 @@ class StudentManagementController extends Controller
             'school_class_id' => $data['school_class_id'],
             'section_id' => $data['current_section_id'],
         ])->with('success', $count.' student(s) moved successfully. Roll numbers cleared.');
+    }
+
+    /** Preserve existing fee snapshots when the destination tariff is identical. */
+    private function validateSectionFeeCompatibility(StudentEnrollment $enrollment, int $target): void
+    {
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('fee_structures', 'section_id')) {
+            return;
+        }
+        $scope = DB::table('fee_structures')
+            ->where('school_id', $enrollment->school_id)
+            ->where('academic_year_id', $enrollment->academic_year_id)
+            ->where('school_class_id', $enrollment->school_class_id);
+        $sourceIds = DB::table('student_fee_dues as d')
+            ->join('fee_structures as f', 'f.id', '=', 'd.fee_structure_id')
+            ->where('d.student_enrollment_id', $enrollment->id)
+            ->where('d.school_id', $enrollment->school_id)
+            ->whereNotNull('f.section_id')->where('f.section_id', '!=', $target)
+            ->distinct()->pluck('f.id');
+        if ($sourceIds->isEmpty()) {
+            return;
+        }
+        $targets = (clone $scope)->where('status', 1)->where('section_id', $target)->pluck('id');
+        if ($targets->isEmpty()) {
+            $targets = (clone $scope)->where('status', 1)->whereNull('section_id')->pluck('id');
+        }
+        $signature = function ($id) use ($enrollment) {
+            $items = DB::table('fee_structure_items')->where('fee_structure_id', $id)
+                ->where('status', 1)->get(['fee_head_id', 'amount']);
+            $installments = DB::table('fee_installments as i')
+                ->join('fee_structure_items as h', 'h.id', '=', 'i.fee_structure_item_id')
+                ->where('i.school_id', $enrollment->school_id)
+                ->where('i.fee_structure_id', $id)->where('h.fee_structure_id', $id)
+                ->where('i.status', 1)->where('h.status', 1)
+                ->get(['h.fee_head_id', 'i.period_start', 'i.period_end', 'i.due_date', 'i.amount']);
+            if ($items->isEmpty() || $installments->isEmpty()) {
+                return null;
+            }
+            $normalize = fn ($rows) => $rows->map(fn ($row) => json_encode((array) $row))->sort()->values()->all();
+            return [$normalize($items), $normalize($installments)];
+        };
+        foreach ($sourceIds as $sourceId) {
+            $source = $signature($sourceId);
+            if ($targets->count() !== 1 || $source === null || $source !== $signature($targets->first())) {
+                throw ValidationException::withMessages(['changes' => 'Enrollment '.$enrollment->id.' has a different, missing or ambiguous destination fee template. Reconcile fees before moving.']);
+            }
+        }
     }
 
     public function sectionChangeMultiple(Request $request)

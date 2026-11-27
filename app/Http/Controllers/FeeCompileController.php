@@ -48,12 +48,43 @@ class FeeCompileController extends Controller
                 return $rows->pluck('school_class_id')->unique()->values();
             });
 
+        // Read-only compilation history; match the existing duplicate check.
+        $historyYear = request()->input('history_year');
+        $historyClass = request()->input('history_class');
+        $historySection = request()->input('history_section');
+        $history = StudentFeeAssignment::where('student_fee_assignments.school_id', $schoolId)
+            ->with(['student', 'academicYear', 'feeStructure', 'enrollment.schoolClass', 'enrollment.section'])
+            ->withCount('dues')->withSum('dues', 'base_amount');
+        $enrollmentScope = StudentEnrollment::where('student_enrollments.school_id', $schoolId)->where('student_enrollments.status', 1);
+        if ($historyYear) {
+            $history->where('academic_year_id', $historyYear);
+            $enrollmentScope->where('academic_year_id', $historyYear);
+        }
+        if ($historyClass || $historySection) {
+            $history->whereHas('enrollment', function ($q) use ($schoolId, $historyClass, $historySection) {
+                $q->where('school_id', $schoolId);
+                if ($historyClass) $q->where('school_class_id', $historyClass);
+                if ($historySection) $q->where('section_id', $historySection);
+            });
+            if ($historyClass) $enrollmentScope->where('school_class_id', $historyClass);
+            if ($historySection) $enrollmentScope->where('section_id', $historySection);
+        }
+        $summaryRows = (clone $enrollmentScope)->leftJoin('academic_years as ay', 'ay.id', '=', 'student_enrollments.academic_year_id')
+            ->leftJoin('school_classes as sc', 'sc.id', '=', 'student_enrollments.school_class_id')
+            ->leftJoin('sections as sec', 'sec.id', '=', 'student_enrollments.section_id')
+            ->selectRaw('ay.name as year_name, sc.name as class_name, sec.name as section_name, COUNT(*) as total_students')
+            ->selectRaw('SUM(CASE WHEN EXISTS (SELECT 1 FROM student_fee_assignments a WHERE a.school_id = student_enrollments.school_id AND a.student_id = student_enrollments.student_id AND a.academic_year_id = student_enrollments.academic_year_id) THEN 1 ELSE 0 END) as compiled_students')
+            ->groupBy('student_enrollments.academic_year_id', 'student_enrollments.school_class_id', 'student_enrollments.section_id', 'ay.name', 'sc.name', 'sec.name')
+            ->orderBy('ay.name', 'desc')->orderBy('sc.name')->orderBy('sec.name')->get();
+        $compiledList = $history->orderByDesc('assigned_date')->orderByDesc('id')->paginate(50, ['*'], 'history_page')->withQueryString();
+        $historySections = Section::where('school_id', $schoolId)->orderBy('name')->get();
+
         return view(
             'fee-compile.index',
             compact(
                 'academicYears',
                 'classes',
-                'templateClasses'
+                'templateClasses', 'summaryRows', 'compiledList', 'historySections'
             )
         );
     }

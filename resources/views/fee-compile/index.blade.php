@@ -201,6 +201,35 @@
 
     </div>
 
+    <div class="card border-0 shadow-sm mt-4" id="compiled-history">
+        <div class="card-header bg-white"><strong>Already Compiled Fee List</strong></div>
+        <div class="card-body">
+            <form method="GET" action="{{ url()->current() }}#compiled-history" class="row g-2 mb-3">
+                <div class="col-md-3"><label class="form-label">Academic Year</label><select name="history_year" class="form-select"><option value="">All Years</option>@foreach($academicYears as $year)<option value="{{ $year->id }}" @selected(request('history_year') == $year->id)>{{ $year->name }}</option>@endforeach</select></div>
+                <div class="col-md-3"><label class="form-label">Class</label><select name="history_class" class="form-select"><option value="">All Classes</option>@foreach($classes as $class)<option value="{{ $class->id }}" @selected(request('history_class') == $class->id)>{{ $class->name }}</option>@endforeach</select></div>
+                <div class="col-md-3"><label class="form-label">Section</label><select name="history_section" class="form-select"><option value="">All Sections</option>@foreach($historySections as $section)<option value="{{ $section->id }}" @selected(request('history_section') == $section->id)>{{ $section->name }} ({{ $classes->firstWhere('id', $section->school_class_id)?->name ?? '-' }}, {{ $academicYears->firstWhere('id', $section->academic_year_id)?->name ?? '-' }})</option>@endforeach</select></div>
+                <div class="col-md-3 d-flex align-items-end gap-2"><button class="btn btn-primary">Filter</button><a class="btn btn-light" href="{{ url()->current() }}#compiled-history">Reset</a></div>
+            </form>
+            <div class="row g-2 mb-3">
+                @foreach(['Total Students' => $summaryRows->sum('total_students'), 'Compiled Students' => $summaryRows->sum('compiled_students'), 'Pending Students' => $summaryRows->sum('total_students') - $summaryRows->sum('compiled_students')] as $label => $value)
+                    <div class="col-md-4"><div class="border rounded p-3"><small>{{ $label }}</small><h4 class="mb-0">{{ $value }}</h4></div></div>
+                @endforeach
+            </div>
+            <h6>Class / Section Summary (active enrollments)</h6>
+            <div class="table-responsive"><table class="table table-bordered table-striped align-middle">
+                <thead class="table-light"><tr><th>Academic Year</th><th>Class</th><th>Section</th><th>Total</th><th>Compiled</th><th>Pending</th><th>Status</th></tr></thead>
+                <tbody>@forelse($summaryRows as $r)<tr><td>{{ $r->year_name }}</td><td>{{ $r->class_name }}</td><td>{{ $r->section_name ?? '-' }}</td><td>{{ $r->total_students }}</td><td>{{ $r->compiled_students }}</td><td>{{ $r->total_students - $r->compiled_students }}</td><td><span class="badge bg-{{ $r->compiled_students == $r->total_students ? 'success' : ($r->compiled_students ? 'warning text-dark' : 'secondary') }}">{{ $r->compiled_students == $r->total_students ? 'Compiled' : ($r->compiled_students ? 'Partial' : 'Pending') }}</span></td></tr>@empty<tr><td colspan="7" class="text-center">No enrollments found.</td></tr>@endforelse</tbody>
+            </table></div>
+            <h6 class="mt-3">Student-wise Compilation History ({{ $compiledList->total() }})</h6>
+            <div class="table-responsive"><table class="table table-bordered table-striped align-middle">
+                <thead class="table-light"><tr><th>Admission No.</th><th>Student</th><th>Year</th><th>Class / Section</th><th>Fee Template</th><th>Compile Date</th><th>Dues</th><th>Gross Fee</th><th>Assignment Status</th></tr></thead>
+                <tbody>@forelse($compiledList as $a)<tr><td>{{ $a->student?->admission_no ?? '-' }}</td><td>{{ $a->student?->student_name ?? '-' }}</td><td>{{ $a->academicYear?->name ?? '-' }}</td><td>{{ $a->enrollment?->schoolClass?->name ?? '-' }} / {{ $a->enrollment?->section?->name ?? '-' }}</td><td>{{ $a->feeStructure?->name ?? '-' }}</td><td>{{ $a->assigned_date?->format('d-m-Y') ?? '-' }}</td><td>{{ $a->dues_count }}</td><td>₹{{ number_format($a->dues_sum_base_amount ?? 0, 2) }}</td><td>{{ $a->status ? 'Active' : 'Inactive' }}</td></tr>@empty<tr><td colspan="9" class="text-center">No compiled fee assignments found.</td></tr>@endforelse</tbody>
+            </table></div>
+            {{ $compiledList->fragment('compiled-history')->links('pagination::bootstrap-5') }}
+            <small class="text-muted">Compiled counts follow the existing student/year assignment check. Class and section reflect the linked enrollment's current values. Gross fee includes all linked dues before adjustments.</small>
+        </div>
+    </div>
+
 </div>
 
 

@@ -71,7 +71,7 @@
 @endphp
 @if($financeLanding)
             <div class="erp-module-tile">
-                <a href="{{ route($financeLanding) }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
+                <a href="{{ route('accounts.index') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
                     <i class="bi bi-cash-stack erp-module-icon"></i>
                     <span>Accounts &amp; Fee Management</span>
                 </a>
@@ -82,7 +82,7 @@
             <div class="erp-module-tile">
                 <a href="{{ route('transport.index') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
                     <i class="bi bi-bus-front erp-module-icon"></i>
-                    <span>Transport Fee Management</span>
+                    <span>Transport Management</span>
                 </a>
             </div>
         @endif

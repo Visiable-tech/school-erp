@@ -37,6 +37,7 @@ class StudentFeeDue extends Model
         'payment_status',
         'status',
         'student_optional_fee_assignment_id',
+        'student_transport_assignment_id',
         'waiver_amount',
         'fine_waiver_amount',
     ];

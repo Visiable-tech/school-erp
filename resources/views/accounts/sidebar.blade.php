@@ -3,12 +3,12 @@
     $reportRoute = 'accounts.reports.index';
     $reportKey = request('report', 'cashflow');
     $groups = [
-        ['expenses','Expense & Payments','bi-receipt',[
+        ['expenses','Income & Expenses','bi-receipt',[
             ['Expense Register','accounts.expenses',[],null],
             ['Expense Categories','accounts.categories',[],'accounts.category.manage'],
             ['Expense Payment Report',$reportRoute,['report'=>'expenses'],'accounts.reports.view'],
         ]],
-        ['vendors','Vendor Management & Payments','bi-building',[
+        ['vendors','Vendor Management','bi-building',[
             ['Vendor List / Invoices / Payments','accounts.vendors.index',[],null],
             ['Vendor Outstanding',$reportRoute,['report'=>'vendors'],'accounts.reports.view'],
         ]],
@@ -23,7 +23,7 @@
             ['General Ledger',$reportRoute,['report'=>'ledger'],'accounts.reports.view'],
             ['Trial Balance',$reportRoute,['report'=>'trial'],'accounts.reports.view'],
         ]],
-        ['reports','Advanced Accounts Reports','bi-bar-chart',[
+        ['reports','Reports & MIS','bi-bar-chart',[
             ['Receipts & Payments',$reportRoute,['report'=>'cashflow'],'accounts.reports.view'],
             ['Income & Expenditure',$reportRoute,['report'=>'income'],'accounts.reports.view'],
             ['Day Book',$reportRoute,['report'=>'daybook'],'accounts.reports.view'],
@@ -35,6 +35,11 @@
 @if(\Illuminate\Support\Facades\Route::has('accounts.index'))
 <a href="{{ route('accounts.index') }}" class="{{ request()->routeIs('accounts.index') ? 'active' : '' }}"><i class="bi bi-speedometer2"></i> Accounts Dashboard</a>
 @endif
+@endcan
+
+@include('partials.admin.menus.fees')
+
+@can('accounts.view')
 @foreach($groups as [$key,$label,$icon,$items])
     @php
         $visible = collect($items)->filter(fn($item) => \Illuminate\Support\Facades\Route::has($item[1]) && (!$item[3] || auth()->user()->can($item[3])));

@@ -26,7 +26,9 @@
                 $module = 'students';
             } elseif (preg_match('/^(academic-year|school|wing|section|subject|class-subject|section-group|calendar-event-types|school-calendar)/', $routeName)) {
                 $module = 'academic';
-            } elseif (preg_match('/^(transport|inventory|communication|ticket|visitor)/', $routeName)) {
+            } elseif (str_starts_with($routeName, 'transport.')) {
+                $module = 'transport';
+            } elseif (preg_match('/^(inventory|communication|ticket|visitor)/', $routeName)) {
                 $module = 'operations';
             }
         @endphp
@@ -57,10 +59,12 @@
             @endif
         @elseif($module === 'fees')
             <div class="menu-title">Accounts &amp; Fee Management</div>
-            @include('partials.admin.menus.fees')
             @include('accounts.sidebar')
         @elseif($module === 'hr')
             @include('partials.admin.menus.hr')
+        @elseif($module === 'transport')
+            <div class="menu-title">Transport Management</div>
+            <a href="{{ route('transport.index') }}" class="{{ request()->routeIs('transport.*') ? 'active' : '' }}"><i class="bi bi-bus-front"></i> Transport</a>
         @elseif($module === 'operations')
             @include('partials.admin.menus.operations')
         @else

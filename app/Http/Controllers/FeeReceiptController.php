@@ -299,6 +299,7 @@ class FeeReceiptController extends Controller
 
                         'id' =>
                             $due->id,
+                        'is_transport' => $due->student_transport_assignment_id !== null,
 
                         'fee_head' =>
                             $due->fee_head_name

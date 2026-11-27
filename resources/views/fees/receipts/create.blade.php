@@ -672,6 +672,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     <td>
                         ${escapeHtml(row.fee_head)}
+                        ${row.is_transport ? '<span class="badge bg-success ms-1">Transport</span>' : ''}
                     </td>
 
                     <td>

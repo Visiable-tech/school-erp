@@ -27,6 +27,8 @@ class FeeDashboardController extends Controller
         abort_if($from > $to,422,'Invalid date range.');
         $dues = StudentFeeDue::where('student_fee_dues.school_id',$schoolId)->where('student_fee_dues.academic_year_id',$academicYearId)->where('student_fee_dues.status',1);
         $summary = (array)(clone $dues)->toBase()->selectRaw('COALESCE(SUM(base_amount),0) actual, COALESCE(SUM(discount_amount),0) discount, COALESCE(SUM(fine_amount),0) fine, COALESCE(SUM(payable_amount),0) payable, COALESCE(SUM(paid_amount),0) paid, COALESCE(SUM(balance_amount),0) pending')->first();
+        $transportSummary = (clone $dues)->whereNotNull('student_transport_assignment_id')
+            ->selectRaw('COUNT(DISTINCT student_id) students, COALESCE(SUM(payable_amount),0) payable, COALESCE(SUM(paid_amount),0) paid, COALESCE(SUM(balance_amount),0) pending')->first();
         $receipts = FeeCollection::where('fee_collections.school_id',$schoolId)->where('fee_collections.academic_year_id',$academicYearId)->where('fee_collections.status','posted');
         $todayQuery = (clone $receipts)->where('payment_date',$today);
         $todayCollection = (clone $todayQuery)->sum('total_amount');
@@ -53,6 +55,6 @@ class FeeDashboardController extends Controller
         $studentsWithDues = (clone $dues)->where('balance_amount','>',0)->distinct()->count('student_id');
         $overdueStudents = (clone $dues)->where('balance_amount','>',0)->where('due_date','<',now()->subDays(30)->toDateString())->distinct()->count('student_id');
         $recentReceipts = (clone $period)->leftJoin('students as s',function($j){$j->on('s.id','=','fee_collections.student_id')->on('s.school_id','=','fee_collections.school_id');})->leftJoin('student_enrollments as e',function($j){$j->on('e.id','=','fee_collections.student_enrollment_id')->on('e.school_id','=','fee_collections.school_id');})->leftJoin('school_classes as c',function($j){$j->on('c.id','=','e.school_class_id')->on('c.school_id','=','e.school_id');})->leftJoin('sections as sec',function($j){$j->on('sec.id','=','e.section_id');})->select('fee_collections.id','fee_collections.payment_date','fee_collections.receipt_no','fee_collections.total_amount','s.student_name','c.name as class_name','sec.name as section_name')->orderByDesc('fee_collections.payment_date')->orderByDesc('fee_collections.id')->limit(5)->get();
-        return view('fees.dashboard',compact('academicYears','currentAcademicYear','academicYearId','summary','todayCollection','todayReceipts','todayConcession','paymentModes','classWise','componentSummary','trend','from','to','totalStudents','studentsWithDues','overdueStudents','recentReceipts'));
+        return view('fees.dashboard',compact('academicYears','currentAcademicYear','academicYearId','summary','todayCollection','todayReceipts','todayConcession','paymentModes','classWise','componentSummary','trend','from','to','totalStudents','studentsWithDues','overdueStudents','recentReceipts','transportSummary'));
     }
 }

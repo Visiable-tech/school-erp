@@ -316,6 +316,11 @@
                     </strong>
 
 
+                    @if(auth()->user()->can('student-enrollment.edit') || auth()->user()->hasRole('Super Admin'))
+                        <button type="button" class="btn btn-success btn-sm ms-auto me-2 bulk-section-save" disabled>
+                            <i class="bi bi-save me-1"></i> Save All Changes
+                        </button>
+                    @endif
                     <span class="badge bg-primary">
 
                         {{ $enrollments->count() }}
@@ -495,6 +500,7 @@
 
                                             <select
                                                 name="new_section_id"
+                                                data-enrollment-id="{{ $enrollment->id }}"
                                                 class="form-select form-select-sm"
                                                 required
                                             >
@@ -597,6 +603,43 @@
 
         </div>
 
+        @if(auth()->user()->can('student-enrollment.edit') || auth()->user()->hasRole('Super Admin'))
+            <form id="bulk-section-form" method="POST" action="{{ route('student-management.section-change.update') }}" class="mt-3 text-end">
+                @csrf
+                <input type="hidden" name="academic_year_id" value="{{ request('academic_year_id') }}">
+                <input type="hidden" name="school_class_id" value="{{ request('school_class_id') }}">
+                <input type="hidden" name="current_section_id" value="{{ request('section_id') }}">
+                <div id="bulk-section-inputs"></div>
+                <button type="button" class="btn btn-success bulk-section-save" disabled>Save All Section Changes</button>
+            </form>
+            <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const form = document.getElementById('bulk-section-form');
+                const selects = [...document.querySelectorAll('select[data-enrollment-id]')];
+                const buttons = [...document.querySelectorAll('.bulk-section-save')];
+                const selected = () => selects.filter(s => s.value !== '');
+                function refresh() {
+                    buttons.forEach(b => { b.disabled = !selected().length; b.textContent = 'Save All Changes (' + selected().length + ')'; });
+                }
+                selects.forEach(s => s.addEventListener('change', refresh));
+                buttons.forEach(b => b.addEventListener('click', function () {
+                    const rows = selected();
+                    if (!rows.length || !confirm('Move ' + rows.length + ' students? Their roll numbers will be cleared.')) return;
+                    const holder = document.getElementById('bulk-section-inputs');
+                    holder.replaceChildren();
+                    rows.forEach((s, i) => {
+                        Object.entries({enrollment_id:s.dataset.enrollmentId,new_section_id:s.value}).forEach(([key,value]) => {
+                            const input = document.createElement('input');
+                            input.type = 'hidden'; input.name = `changes[${i}][${key}]`; input.value = value; holder.appendChild(input);
+                        });
+                    });
+                    buttons.forEach(b => b.disabled = true);
+                    form.submit();
+                }));
+                refresh();
+            });
+            </script>
+        @endif
     @endif
 
 </div>

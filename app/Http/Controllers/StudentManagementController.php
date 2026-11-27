@@ -544,6 +544,10 @@ class StudentManagementController extends Controller
 
     public function updateSection(Request $request)
     {
+        if ($request->has('changes')) {
+            return $this->saveAllSectionChanges($request);
+        }
+
         $schoolId = auth()->user()->school_id;
 
         $validated = $request->validate([
@@ -672,6 +676,59 @@ class StudentManagementController extends Controller
                 'success',
                 'Student section changed successfully. Please assign a new roll number if required.'
             );
+    }
+
+    private function saveAllSectionChanges(Request $request)
+    {
+        abort_unless($request->user()->can('student-enrollment.edit') ||
+            $request->user()->hasRole('Super Admin'), 403);
+        $schoolId = $request->user()->school_id;
+        $data = $request->validate([
+            'academic_year_id' => 'required|integer',
+            'school_class_id' => 'required|integer',
+            'current_section_id' => 'required|integer',
+            'changes' => 'required|array|min:1|max:500',
+            'changes.*.enrollment_id' => 'required|integer|distinct',
+            'changes.*.new_section_id' => 'required|integer|different:current_section_id',
+        ]);
+        $count = DB::transaction(function () use ($data, $schoolId) {
+            $sections = Section::where('school_id', $schoolId)
+                ->where('academic_year_id', $data['academic_year_id'])
+                ->where('school_class_id', $data['school_class_id'])
+                ->get()->keyBy('id');
+            $rows = collect($data['changes'])->keyBy('enrollment_id');
+            $enrollments = StudentEnrollment::where('school_id', $schoolId)
+                ->where('academic_year_id', $data['academic_year_id'])
+                ->where('school_class_id', $data['school_class_id'])
+                ->where('section_id', $data['current_section_id'])
+                ->where('is_current', true)->where('status', 1)
+                ->whereHas('student', fn ($q) => $q->where('status', 1))
+                ->whereIn('id', $rows->keys())->orderBy('id')->lockForUpdate()->get();
+            if (!$sections->has($data['current_section_id']) || $enrollments->count() !== $rows->count()) {
+                throw ValidationException::withMessages(['changes' => 'Student list has changed or is invalid. Reload and try again.']);
+            }
+            foreach ($enrollments as $enrollment) {
+                $target = $rows[$enrollment->id]['new_section_id'];
+                if (!$sections->has($target)) {
+                    throw ValidationException::withMessages(['changes' => 'Invalid destination section.']);
+                }
+                // Existing section-specific fee assignments require manual reconciliation.
+                if (\Illuminate\Support\Facades\Schema::hasColumn('fee_structures', 'section_id') &&
+                    DB::table('student_fee_dues as d')->join('fee_structures as f', 'f.id', '=', 'd.fee_structure_id')
+                        ->where('d.student_enrollment_id', $enrollment->id)
+                        ->where('d.school_id', $schoolId)->whereNotNull('f.section_id')
+                        ->where('f.section_id', '!=', $target)->exists()) {
+                    throw ValidationException::withMessages(['changes' => 'Enrollment '.$enrollment->id.' has section-specific fees. Reconcile fees before moving.']);
+                }
+                $enrollment->update(['section_id' => $target, 'roll_no' => null]);
+            }
+            return $enrollments->count();
+        });
+        return redirect()->route('student-management.section-change', [
+            'academic_year_id' => $data['academic_year_id'],
+            'school_class_id' => $data['school_class_id'],
+            'section_id' => $data['current_section_id'],
+        ])->with('success', $count.' student(s) moved successfully. Roll numbers cleared.');
     }
 
     public function sectionChangeMultiple(Request $request)

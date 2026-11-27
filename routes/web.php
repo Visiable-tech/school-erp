@@ -3782,5 +3782,7 @@ require __DIR__.'/student_notices.php';
 
 require __DIR__.'/teacher_classwork_notice_api.php';
 
+require __DIR__.'/front_office.php';
+
 
 

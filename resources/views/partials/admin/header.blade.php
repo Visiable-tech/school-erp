@@ -35,6 +35,9 @@
 @if((auth()->user()?->hasAnyPermission(['admission-application.view','admission-candidate.view']) ?? false) && \Illuminate\Support\Facades\Route::has('admission.dashboard'))
 <a class="dropdown-item" href="{{ route('admission.dashboard') }}"><i class="bi bi-person-plus me-2"></i>Admission Management</a>
 @endif
+@if((auth()->user()?->can('front-office.view') ?? false) && \Illuminate\Support\Facades\Route::has('front-office.index'))
+<a class="dropdown-item" href="{{ route('front-office.index') }}"><i class="bi bi-people me-2"></i>Front Office Management</a>
+@endif
 @if((auth()->user()?->can('student.view') ?? false) && \Illuminate\Support\Facades\Route::has('student-information.dashboard'))
 <a class="dropdown-item" href="{{ route('student-information.dashboard') }}"><i class="bi bi-people me-2"></i>Student Information System</a>
 @endif
@@ -49,9 +52,7 @@
 @if($financeLanding)
 <a class="dropdown-item" href="{{ route($financeLanding) }}"><i class="bi bi-cash-stack me-2"></i>Accounts &amp; Fee Management</a>
 @endif
-@if((auth()->user()?->can('front-office.view') ?? false) && \Illuminate\Support\Facades\Route::has('front-office.index'))
-<a class="dropdown-item" href="{{ route('front-office.index') }}"><i class="bi bi-people me-2"></i>Front Office Management</a>
-@endif
+
 @if((auth()->user()?->hasAnyRole(['Admin','Super Admin']) ?? false) && \Illuminate\Support\Facades\Route::has('transport.index'))
 <a class="dropdown-item" href="{{ route('transport.index') }}"><i class="bi bi-bus-front me-2"></i>Transport Fee Management</a>
 @endif

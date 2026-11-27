@@ -53,6 +53,9 @@
                 </a>
             </div>
         @endif
+        @if((auth()->user()?->can('front-office.view') ?? false) && \Illuminate\Support\Facades\Route::has('front-office.index'))
+<div class="erp-module-tile"><a href="{{ route('front-office.index') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100"><i class="bi bi-people erp-module-icon"></i><span>Front Office Management</span></a></div>
+@endif
         @if((auth()->user()?->can('student.view') ?? false) && \Illuminate\Support\Facades\Route::has('student-information.dashboard'))
             <div class="erp-module-tile">
                 <a href="{{ route('student-information.dashboard') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
@@ -78,9 +81,7 @@
             </div>
         @endif
 {{-- Transport Fee Management --}}
-        @if((auth()->user()?->can('front-office.view') ?? false) && \Illuminate\Support\Facades\Route::has('front-office.index'))
-<div class="erp-module-tile"><a href="{{ route('front-office.index') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100"><i class="bi bi-people erp-module-icon"></i><span>Front Office Management</span></a></div>
-@endif
+
 @if((auth()->user()?->hasAnyRole(['Admin','Super Admin']) ?? false) && \Illuminate\Support\Facades\Route::has('transport.index'))
             <div class="erp-module-tile">
                 <a href="{{ route('transport.index') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">

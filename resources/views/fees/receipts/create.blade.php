@@ -166,6 +166,7 @@
                         <thead class="table-light">
 
                             <tr>
+                                <th><input type="checkbox" id="selectAllDues" aria-label="Select all dues"></th>
                                 <th>Fee Component</th>
                                 <th>Installment</th>
                                 <th>Due Date</th>
@@ -182,6 +183,7 @@
                                     Balance
                                 </th>
 
+                                <th width="140">Concession</th>
                                 <th width="170">
                                     Pay Now
                                 </th>
@@ -192,7 +194,7 @@
                         <tbody id="duesBody">
 
                             <tr>
-                                <td colspan="7"
+                                <td colspan="9"
                                     class="text-center text-muted py-4">
 
                                     Select academic year and student.
@@ -206,7 +208,7 @@
 
                             <tr class="table-light">
 
-                                <th colspan="5"
+                                <th colspan="6"
                                     class="text-end">
 
                                     Total Outstanding
@@ -220,17 +222,17 @@
 
                                 </th>
 
-                                <th></th>
+                                <th></th><th></th>
 
                             </tr>
 
 
                             <tr class="table-success">
 
-                                <th colspan="6"
+                                <th colspan="8"
                                     class="text-end">
 
-                                    Amount Receiving
+                                    Amount Receiving (Concession: <span id="concessionTotal">₹0.00</span>)
 
                                 </th>
 
@@ -589,7 +591,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         duesBody.innerHTML = `
             <tr>
-                <td colspan="7"
+                <td colspan="9"
                     class="text-center py-4">
                     Loading outstanding fees...
                 </td>
@@ -637,7 +639,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 duesBody.innerHTML = `
                     <tr>
-                        <td colspan="7"
+                        <td colspan="9"
                             class="text-center text-success py-4">
 
                             No outstanding fees found.
@@ -666,6 +668,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
                 tr.innerHTML = `
+                    <td><input type="checkbox" class="due-select" aria-label="Select installment"></td>
 
                     <td>
                         ${escapeHtml(row.fee_head)}
@@ -691,6 +694,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         ${money(row.balance_amount)}
                     </td>
 
+                    <td><input type="number" name="concessions[${row.id}]" class="form-control form-control-sm concession-input" min="0" max="${row.max_concession}" step="0.01" @unless(auth()->user()->hasAnyRole(['Super Admin', 'Accounts'])) disabled @endunless></td>
                     <td>
 
                         <input type="number"
@@ -716,17 +720,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 money(outstanding);
 
 
-            document
-                .querySelectorAll('.payment-input')
-                .forEach(function(input) {
-
-                    input.addEventListener(
-                        'input',
-                        calculateReceiving
-                    );
-
+            duesBody.querySelectorAll('tr').forEach(tr => {
+                const check = tr.querySelector('.due-select');
+                const discount = tr.querySelector('.concession-input');
+                const payment = tr.querySelector('.payment-input');
+                check.addEventListener('change', () => {
+                    if (!check.checked) { discount.value = ''; payment.value = ''; }
+                    else payment.value = (Number(payment.dataset.balance) - Number(discount.value || 0)).toFixed(2);
+                    calculateReceiving();
                 });
-
+                discount.addEventListener('input', () => {
+                    const value = Math.max(0, Math.min(Number(discount.max), Number(discount.value || 0)));
+                    if (Number(discount.value) !== value) discount.value = value.toFixed(2);
+                    check.checked = true;
+                    payment.value = (Number(payment.dataset.balance) - value).toFixed(2);
+                    calculateReceiving();
+                });
+                payment.addEventListener('input', () => { check.checked = Number(payment.value) > 0; calculateReceiving(); });
+            });
 
             payFullButton.disabled = false;
 
@@ -734,7 +745,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             duesBody.innerHTML = `
                 <tr>
-                    <td colspan="7"
+                    <td colspan="9"
                         class="text-center text-danger py-4">
 
                         Unable to load outstanding fees.
@@ -754,81 +765,45 @@ document.addEventListener('DOMContentLoaded', function () {
     |--------------------------------------------------------------------------
     */
 
-    payFullButton.addEventListener('click', function () {
-
-        document
-            .querySelectorAll('.payment-input')
-            .forEach(function(input) {
-
-                input.value =
-                    Number(
-                        input.dataset.balance
-                    ).toFixed(2);
-
-            });
-
-
-        calculateReceiving();
-    });
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | TOTAL
-    |--------------------------------------------------------------------------
-    */
+    function selectAllDues(checked) {
+        duesBody.querySelectorAll('.due-select').forEach(check => {
+            check.checked = checked;
+            check.dispatchEvent(new Event('change'));
+        });
+    }
+    document.getElementById('selectAllDues').addEventListener('change', e => selectAllDues(e.target.checked));
+    payFullButton.addEventListener('click', () => selectAllDues(true));
 
     function calculateReceiving() {
-
-        let total = 0;
-
-
-        document
-            .querySelectorAll('.payment-input')
-            .forEach(function(input) {
-
-                let amount =
-                    Number(input.value || 0);
-
-                const balance =
-                    Number(
-                        input.dataset.balance || 0
-                    );
-
-
-                if (amount > balance) {
-
-                    amount = balance;
-
-                    input.value =
-                        balance.toFixed(2);
-                }
-
-
-                if (amount < 0) {
-
-                    amount = 0;
-
-                    input.value = '';
-                }
-
-
-                total += amount;
-            });
-
-
-        document.getElementById(
-            'receivingTotal'
-        ).textContent =
-            money(total);
+        let total = 0, concessions = 0;
+        const checks = [...duesBody.querySelectorAll('.due-select')];
+        checks.forEach(check => {
+            const tr = check.closest('tr');
+            const input = tr.querySelector('.payment-input');
+            const discount = Number(tr.querySelector('.concession-input').value || 0);
+            const balance = Number(input.dataset.balance);
+            input.readOnly = discount > 0;
+            if (discount > 0) input.value = (balance - discount).toFixed(2);
+            else if (Number(input.value) > balance) input.value = balance.toFixed(2);
+            else if (Number(input.value) < 0) input.value = '';
+            total += Number(input.value || 0);
+            concessions += discount;
+        });
+        const all = document.getElementById('selectAllDues');
+        all.checked = checks.length > 0 && checks.every(c => c.checked);
+        all.indeterminate = checks.some(c => c.checked) && !all.checked;
+        document.getElementById('receivingTotal').textContent = money(total);
+        document.getElementById('concessionTotal').textContent = money(concessions);
     }
 
-
     function resetDues() {
+        document.getElementById("selectAllDues").checked = false;
+        document.getElementById("selectAllDues").indeterminate = false;
+        document.getElementById("concessionTotal").textContent = money(0);
 
         duesBody.innerHTML = `
             <tr>
-                <td colspan="7"
+                <td colspan="9"
                     class="text-center text-muted py-4">
 
                     Select academic year and student.

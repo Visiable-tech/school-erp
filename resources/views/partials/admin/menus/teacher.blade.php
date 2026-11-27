@@ -13,9 +13,14 @@
             $canAccessTeacherPortal =
                 auth()->user()?->hasAnyRole(['Teacher', 'Super Admin'])
                 ?? false;
+            $canAccessStudentNotices =
+                (auth()->user()?->hasAnyRole(['Teacher', 'Admin', 'Super Admin']) ?? false)
+                && (auth()->user()?->can('teacher-notice.view') ?? false)
+                && \Illuminate\Support\Facades\Route::has('teacher.student-notices.index');
+            $studentNoticeOpen = request()->routeIs('teacher.student-notices.*');
         @endphp
 
-        @if($canAccessTeacherPortal || $canManageTeacherAssignments)
+        @if($canAccessTeacherPortal || $canManageTeacherAssignments || $canAccessStudentNotices)
 
             <div class="menu-title">
                 Teacher Portal
@@ -141,6 +146,34 @@
                     </div>
                     </div>
 
+                    {{-- Student Notice Management --}}
+                    @if($canAccessStudentNotices)
+                        <a data-bs-toggle="collapse" href="#studentNoticeMenu" role="button"
+                           aria-expanded="{{ $studentNoticeOpen ? 'true' : 'false' }}"
+                           aria-controls="studentNoticeMenu"
+                           class="{{ $studentNoticeOpen ? 'active' : '' }}">
+                            <i class="bi bi-megaphone me-2"></i>
+                            <span class="flex-grow-1">Notice Management</span>
+                            <i class="bi bi-chevron-down sidebar-arrow"></i>
+                        </a>
+                        <div id="studentNoticeMenu" class="collapse {{ $studentNoticeOpen ? 'show' : '' }}">
+                            <div class="sidebar-submenu">
+                                <a href="{{ route('teacher.student-notices.index') }}"
+                                   class="{{ request()->routeIs('teacher.student-notices.index', 'teacher.student-notices.show') ? 'active' : '' }}">
+                                    <i class="bi bi-list-ul me-2"></i> Notice Dashboard
+                                </a>
+                                @can('teacher-notice.create')
+                                    @if(\Illuminate\Support\Facades\Route::has('teacher.student-notices.create'))
+                                        <a href="{{ route('teacher.student-notices.create') }}"
+                                           class="{{ request()->routeIs('teacher.student-notices.create') ? 'active' : '' }}">
+                                            <i class="bi bi-plus-circle me-2"></i> Create Notice
+                                        </a>
+                                    @endif
+                                @endcan
+                            </div>
+                        </div>
+                    @endif
+
                     @php $teacherLibraryOpen = request()->routeIs('teacher.library.*'); @endphp
                     <a data-bs-toggle="collapse" href="#teacherLibraryMenu" role="button" aria-expanded="{{ $teacherLibraryOpen ? 'true':'false' }}">Library</a>
                     <div class="collapse {{ $teacherLibraryOpen ? 'show':'' }}" id="teacherLibraryMenu">
@@ -194,6 +227,3 @@
             </div>
 
         @endif
-
-
-        

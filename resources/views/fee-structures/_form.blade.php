@@ -1,6 +1,6 @@
 <div class="row g-3">
 
-    <div class="col-md-4">
+    <div class="col-md-3">
 
         <label class="form-label">
             Academic Year
@@ -40,7 +40,7 @@
     </div>
 
 
-    <div class="col-md-4">
+    <div class="col-md-3">
 
         <label class="form-label">
             Class
@@ -76,7 +76,33 @@
     </div>
 
 
-    <div class="col-md-4">
+    <div class="col-md-3">
+        <label class="form-label">Section</label>
+        <select name="section_id" id="fee_template_section" class="form-select">
+            <option value="">All Sections</option>
+        </select>
+        @error('section_id') <div class="text-danger">{{ $message }}</div> @enderror
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const year = document.querySelector('[name="academic_year_id"]');
+        const cls = document.querySelector('[name="school_class_id"]');
+        const section = document.getElementById('fee_template_section');
+        const rows = @json($sections);
+        const selected = @json(old('section_id', $feeStructure->section_id ?? null));
+        function refresh(value = '') {
+            section.replaceChildren(new Option('All Sections', ''));
+            rows.filter(r => String(r.academic_year_id) === year.value && String(r.school_class_id) === cls.value)
+                .forEach(r => section.add(new Option(r.name, r.id)));
+            section.value = String(value ?? '');
+            if (section.selectedIndex < 0) section.value = '';
+        }
+        year.addEventListener('change', () => refresh());
+        cls.addEventListener('change', () => refresh());
+        refresh(selected);
+    });
+    </script>
+    <div class="col-md-3">
 
         <label class="form-label">
             Template Name

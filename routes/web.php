@@ -3740,6 +3740,31 @@ Route::post('/transport-fees/stops', [\App\Http\Controllers\TransportFeeControll
 Route::get('/user-management/activity-logs', [UserActivityLogController::class, 'index'])->name('user-activity-logs.index');
 Route::get('/user-management/activity-logs/export', [UserActivityLogController::class, 'export'])->name('user-activity-logs.export');
 
+
+Route::middleware(['auth', 'role:Super Admin|Admin'])
+    ->prefix('student-app-logins')
+    ->name('student-app-logins.')
+    ->group(function () {
+
+        Route::get('/', [StudentAppLoginController::class, 'index'])
+            ->name('index');
+
+        Route::post('/generate', [StudentAppLoginController::class, 'generate'])
+            ->name('generate');
+
+        Route::post('/generate-filtered', [StudentAppLoginController::class, 'generateFiltered'])
+            ->name('generate-filtered');
+
+        Route::post('/{id}/reset', [StudentAppLoginController::class, 'reset'])
+            ->whereNumber('id')
+            ->name('reset');
+
+        Route::post('/{id}/toggle', [StudentAppLoginController::class, 'toggle'])
+            ->whereNumber('id')
+            ->name('toggle');
+
+    });
+
 // RBAC administration routes
 require __DIR__.'/access.php';
 
@@ -3752,5 +3777,10 @@ require __DIR__.'/accounts_salary.php';
 require __DIR__.'/accounts_ledger.php';
 
 require __DIR__.'/accounts_reports.php';
+
+require __DIR__.'/student_notices.php';
+
+require __DIR__.'/teacher_classwork_notice_api.php';
+
 
 

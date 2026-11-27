@@ -177,6 +177,7 @@
                     <th>Template</th>
                     <th>Academic Year</th>
                     <th>Class</th>
+                    <th>Section</th>
                     <th>Components</th>
                     <th>Cycle Value</th>
                     <th>Status</th>
@@ -224,6 +225,7 @@
                     </td>
 
 
+                    <td>{{ $structure->section?->name ?? "All Sections" }}</td>
                     <td>
 
                         <span class="badge bg-primary">
@@ -327,7 +329,7 @@
 
                 <tr>
 
-                    <td colspan="8"
+                    <td colspan="9"
                         class="text-center text-muted py-5">
 
                         No Fee Templates found.

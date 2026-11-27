@@ -34,20 +34,26 @@ class FeeCompileController extends Controller
         ->orderByDesc('start_date')
         ->get();
 
-        $classes = SchoolClass::where(
-            'school_id',
-            $schoolId
-        )
-        ->where('status', 1)
-        ->orderBy('sort_order')
-        ->orderBy('name')
-        ->get();
+        $classes = SchoolClass::where('school_id', $schoolId)
+            ->where('status', 1)
+            ->orderBy('sort_order')->orderBy('name')->get();
+
+        $templateClasses = FeeStructure::where('school_id', $schoolId)
+            ->where('status', 1)
+            ->whereIn('academic_year_id', $academicYears->pluck('id'))
+            ->whereIn('school_class_id', $classes->pluck('id'))
+            ->get(['academic_year_id', 'school_class_id'])
+            ->groupBy('academic_year_id')
+            ->map(function ($rows) {
+                return $rows->pluck('school_class_id')->unique()->values();
+            });
 
         return view(
             'fee-compile.index',
             compact(
                 'academicYears',
-                'classes'
+                'classes',
+                'templateClasses'
             )
         );
     }
@@ -136,6 +142,7 @@ class FeeCompileController extends Controller
             $request->school_class_id
         )
         ->where('status', 1)
+        ->forSection($request->section_id)
         ->orderBy('name')
         ->get([
             'id',
@@ -239,6 +246,7 @@ class FeeCompileController extends Controller
          * table uses a different active-status field.
          */
         $query->where('status', 1);
+        $this->restrictTemplateEnrollments($query, $feeStructure);
 
         $enrollments = $query
             ->orderBy('section_id')
@@ -257,10 +265,6 @@ class FeeCompileController extends Controller
             ->where(
                 'academic_year_id',
                 $validated['academic_year_id']
-            )
-            ->where(
-                'fee_structure_id',
-                $validated['fee_structure_id']
             )
             ->whereIn(
                 'student_id',
@@ -418,6 +422,7 @@ class FeeCompileController extends Controller
             );
         }
 
+        $this->restrictTemplateEnrollments($enrollments, $feeStructure);
         $enrollments =
             $enrollments->get();
 
@@ -464,10 +469,6 @@ class FeeCompileController extends Controller
                         $validated[
                             'academic_year_id'
                         ]
-                    )
-                    ->where(
-                        'fee_structure_id',
-                        $feeStructure->id
                     )
                     ->exists();
 
@@ -688,20 +689,7 @@ class FeeCompileController extends Controller
                 ),
             ],
 
-            'section_id' => [
-                'nullable',
-
-                Rule::exists(
-                    'sections',
-                    'id'
-                )->where(
-                    fn ($q) =>
-                        $q->where(
-                            'school_id',
-                            $schoolId
-                        )
-                ),
-            ],
+            'section_id' => ['nullable', 'integer', Rule::exists('sections', 'id')->where(fn ($q) => $q->where('school_id', $schoolId)->where('academic_year_id', $request->academic_year_id)->where('school_class_id', $request->school_class_id)->where('status', 1))],
 
             'fee_structure_id' => [
                 'required',
@@ -784,6 +772,18 @@ class FeeCompileController extends Controller
             ]
         )
         ->where('status', 1)
+        ->forSection($validated['section_id'] ?? null)
         ->firstOrFail();
+    }
+    private function restrictTemplateEnrollments($query, FeeStructure $template): void
+    {
+        if ($template->section_id) {
+            $query->where('section_id', $template->section_id);
+        } else {
+            $query->whereNotIn('section_id', FeeStructure::where('school_id', $template->school_id)
+                ->where('academic_year_id', $template->academic_year_id)
+                ->where('school_class_id', $template->school_class_id)->where('status', 1)
+                ->whereNotNull('section_id')->select('section_id'));
+        }
     }
 }

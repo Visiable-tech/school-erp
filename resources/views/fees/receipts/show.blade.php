@@ -128,6 +128,8 @@
                         <th>Fee Component</th>
                         <th>Installment</th>
                         <th>Due Date</th>
+                        <th class="text-end">Amount Before Concession</th>
+                        <th class="text-end">Concession</th>
                         <th class="text-end">Amount Paid</th>
                     </tr>
 
@@ -152,11 +154,9 @@
                                 {{ optional($item->due_date)->format('d-m-Y') }}
                             </td>
 
-                            <td class="text-end">
-
-                                ₹{{ number_format($item->amount, 2) }}
-
-                            </td>
+                            <td class="text-end">₹{{ number_format((float) $item->amount + (float) $item->concession_amount, 2) }}</td>
+                            <td class="text-end">₹{{ number_format($item->concession_amount ?? 0, 2) }}</td>
+                            <td class="text-end">₹{{ number_format($item->amount, 2) }}</td>
 
                         </tr>
 
@@ -172,10 +172,12 @@
                         <th colspan="3"
                             class="text-end">
 
-                            Total Received
+                            Total
 
                         </th>
 
+                        <th class="text-end">₹{{ number_format($feeReceipt->items->sum('amount') + $feeReceipt->items->sum('concession_amount'), 2) }}</th>
+                        <th class="text-end">₹{{ number_format($feeReceipt->items->sum('concession_amount'), 2) }}</th>
                         <th class="text-end">
 
                             ₹{{ number_format($feeReceipt->total_amount, 2) }}
@@ -236,12 +238,15 @@
 
     @if($feeReceipt->status === 'posted')
 
-        @can('fee-collection.cancel')
+        @role('Super Admin')
+        @if($feeReceipt->isModificationLocked())
+            <div class="alert alert-secondary"><i class="bi bi-lock"></i> Receipt locked: 7-day modification period expired.</div>
+        @else
 
-            <div class="card border-danger">
+            <div class="card border-danger" id="receipt-correction">
 
                 <div class="card-header text-danger">
-                    Cancel Receipt
+                    Cancel or Correct Receipt
                 </div>
 
                 <div class="card-body">
@@ -252,12 +257,12 @@
                         @csrf
 
                         <label class="form-label">
-                            Cancellation Reason
+                            Cancellation / Correction Reason
                         </label>
 
                         <textarea name="cancellation_reason"
                                   class="form-control mb-3"
-                                  rows="3"
+                                  rows="3" maxlength="1980"
                                   required></textarea>
 
 
@@ -269,13 +274,18 @@
 
                         </button>
 
+                        <button type="submit" name="correction" value="1" class="btn btn-warning"
+                                onclick="return confirm('Cancel this receipt and open a new collection form for the corrected payment?')">
+                            Correct &amp; Recollect
+                        </button>
                     </form>
 
                 </div>
 
             </div>
 
-        @endcan
+        @endif
+        @endrole
 
     @endif
 

@@ -46,6 +46,11 @@ class FeeCollection extends Model
         'cancelled_at' => 'datetime',
     ];
 
+    public function isModificationLocked(): bool
+    {
+        return !$this->created_at || now()->greaterThanOrEqualTo($this->created_at->copy()->addDays(7));
+    }
+
     public function school()
     {
         return $this->belongsTo(School::class);

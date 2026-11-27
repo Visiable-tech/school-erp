@@ -22,6 +22,7 @@ class FeeStructureController extends Controller
         $query = FeeStructure::with([
                 'academicYear',
                 'schoolClass',
+                'section',
                 'items.feeHead.componentGroup',
                 'items.feeHead.feeCycle',
             ])
@@ -117,12 +118,14 @@ class FeeStructureController extends Controller
             $schoolId
         );
 
+        $sections = $this->sectionsForSchool($schoolId);
         return view(
             'fee-structures.create',
             compact(
                 'academicYears',
                 'classes',
-                'feeHeads'
+                'feeHeads',
+                'sections'
             )
         );
     }
@@ -156,6 +159,7 @@ class FeeStructureController extends Controller
 
                 'school_class_id' =>
                     $validated['school_class_id'],
+                'section_id' => $validated['section_id'] ?? null,
 
                 'name' =>
                     trim($validated['name']),
@@ -250,13 +254,15 @@ class FeeStructureController extends Controller
             ->orderBy('name')
             ->get();
 
+        $sections = $this->sectionsForSchool($schoolId);
         return view(
             'fee-structures.edit',
             compact(
                 'feeStructure',
                 'academicYears',
                 'classes',
-                'feeHeads'
+                'feeHeads',
+                'sections'
             )
         );
     }
@@ -314,6 +320,7 @@ class FeeStructureController extends Controller
 
                 'school_class_id' =>
                     $validated['school_class_id'],
+                'section_id' => $validated['section_id'] ?? null,
 
                 'name' =>
                     trim($validated['name']),
@@ -461,6 +468,7 @@ class FeeStructureController extends Controller
                 ),
             ],
 
+            'section_id' => ['nullable', 'integer', Rule::exists('sections', 'id')->where(fn ($q) => $q->where('school_id', $schoolId)->where('academic_year_id', $request->academic_year_id)->where('school_class_id', $request->school_class_id)->where('status', 1))],
             'name' => [
                 'required',
                 'string',
@@ -523,6 +531,12 @@ class FeeStructureController extends Controller
         ]);
     }
 
+
+    private function sectionsForSchool($schoolId)
+    {
+        return \App\Models\Section::where('school_id', $schoolId)->where('status', 1)
+            ->orderBy('sort_order')->orderBy('name')->get(['id','academic_year_id','school_class_id','name']);
+    }
 
     private function validateComponents(
         array $items,

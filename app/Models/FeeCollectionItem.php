@@ -15,6 +15,7 @@ class FeeCollectionItem extends Model
         'student_fee_due_id',
 
         'amount',
+        'concession_amount',
 
         'fee_head_name',
         'installment_name',
@@ -24,6 +25,7 @@ class FeeCollectionItem extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'concession_amount' => 'decimal:2',
         'due_amount' => 'decimal:2',
         'due_date' => 'date',
     ];

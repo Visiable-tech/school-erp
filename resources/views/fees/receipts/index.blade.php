@@ -208,6 +208,16 @@
                                     </a>
 
                                 @endcan
+                                @role('Super Admin')
+                                    @if($receipt->status === 'posted')
+                                        @if($receipt->isModificationLocked())
+                                            <span class="badge bg-secondary" title="7-day modification period expired"><i class="bi bi-lock"></i> Locked</span>
+                                        @else
+                                            <a href="{{ route('fee-receipts.show', $receipt) }}#receipt-correction" class="btn btn-sm btn-outline-warning" title="Correct receipt"><i class="bi bi-pencil-square"></i></a>
+                                            <a href="{{ route('fee-receipts.show', $receipt) }}#receipt-correction" class="btn btn-sm btn-outline-danger" title="Cancel receipt"><i class="bi bi-x-circle"></i></a>
+                                        @endif
+                                    @endif
+                                @endrole
 
                             </td>
 

@@ -325,8 +325,8 @@ class FeeReceiptController extends Controller
                         'paid_amount' =>
                             (float) $due->paid_amount,
 
-                        'balance_amount' =>
-                            (float) $due->balance_amount,
+                        'balance_amount' => (float) $due->balance_amount,
+                        'max_concession' => max(0, min((float) $due->balance_amount - 0.01, (float) $due->base_amount - (float) $due->discount_amount - (float) $due->waiver_amount)),
                     ];
                 }
             )
@@ -380,8 +380,9 @@ class FeeReceiptController extends Controller
             'payments' =>
                 'required|array',
 
-            'payments.*' =>
-                'nullable|numeric|min:0',
+            'payments.*' => 'nullable|numeric|min:0|decimal:0,2',
+            'concessions' => 'nullable|array',
+            'concessions.*' => 'nullable|numeric|min:0|decimal:0,2',
         ]);
 
 
@@ -400,6 +401,8 @@ class FeeReceiptController extends Controller
             ->firstOrFail();
 
 
+        $concessions = collect($validated['concessions'] ?? [])->filter(fn ($v) => (float) $v > 0);
+        abort_if($concessions->isNotEmpty() && !Auth::user()->hasAnyRole(['Super Admin', 'Accounts']), 403);
         $payments = collect(
             $validated['payments']
         )
@@ -409,6 +412,9 @@ class FeeReceiptController extends Controller
         );
 
 
+        if ($concessions->keys()->diff($payments->keys())->isNotEmpty()) {
+            throw ValidationException::withMessages(['concessions' => 'A concession requires a positive payment on the same installment.']);
+        }
         if ($payments->isEmpty()) {
 
             throw ValidationException::withMessages([
@@ -423,7 +429,7 @@ class FeeReceiptController extends Controller
                 $validated,
                 $schoolId,
                 $paymentMode,
-                $payments
+                $payments, $concessions
             ) {
 
                 /*
@@ -485,6 +491,7 @@ class FeeReceiptController extends Controller
                         'id',
                         $dueIds
                     )
+                    ->where('status', 1)
                     ->lockForUpdate()
                     ->get()
                     ->keyBy('id');
@@ -545,6 +552,13 @@ class FeeReceiptController extends Controller
                     }
 
 
+                    $concession = round((float) $concessions->get($dueId, 0), 2);
+                    if ($concession > 0 && (
+                        $concession > $this->ledger->remainingFee($due) ||
+                        abs(round($amount + $concession - (float) $due->balance_amount, 2)) > 0.001
+                    )) {
+                        throw ValidationException::withMessages(['concessions' => 'Concession must be within the remaining base fee and payment must settle the net balance. Reload dues and try again.']);
+                    }
                     $total += $amount;
                 }
 
@@ -678,8 +692,8 @@ class FeeReceiptController extends Controller
                         'student_fee_due_id' =>
                             $due->id,
 
-                        'amount' =>
-                            $amount,
+                        'amount' => $amount,
+                        'concession_amount' => round((float) $concessions->get($dueId, 0), 2),
 
                         'fee_head_name' =>
                             $due->fee_head_name
@@ -703,6 +717,7 @@ class FeeReceiptController extends Controller
                     ]);
 
 
+                    $due->discount_amount = round((float) $due->discount_amount + (float) $concessions->get($dueId, 0), 2);
                     $due->paid_amount =
                         round(
                             (float) $due->paid_amount
@@ -824,9 +839,12 @@ class FeeReceiptController extends Controller
         FeeCollection $feeReceipt
     ) {
         $this->authorizeSchool($feeReceipt);
+        abort_unless(Auth::user()->hasRole('Super Admin'), 403);
+        abort_if($feeReceipt->isModificationLocked(), 403, 'Receipt modification period has expired.');
 
         $validated = $request->validate([
-            'cancellation_reason' => 'required|string|max:2000',
+            'cancellation_reason' => 'required|string|max:1980',
+            'correction' => 'nullable|boolean',
         ]);
 
         DB::transaction(function () use ($feeReceipt, $validated) {
@@ -835,6 +853,8 @@ class FeeReceiptController extends Controller
                 ->where('id', $feeReceipt->id)
                 ->lockForUpdate()
                 ->firstOrFail();
+
+            abort_if($receipt->isModificationLocked(), 403, 'Receipt modification period has expired.');
 
             if ($receipt->status !== 'posted') {
                 throw ValidationException::withMessages([
@@ -917,7 +937,11 @@ class FeeReceiptController extends Controller
                     ]);
                 }
 
+                if ((float) $item->concession_amount > (float) $due->discount_amount) {
+                    throw ValidationException::withMessages(['receipt' => 'Concession balance cannot be reversed safely.']);
+                }
                 $dueRows[] = [
+                    'concession' => (float) $item->concession_amount,
                     'due' => $due,
                     'amount' => $itemAmount,
                 ];
@@ -934,6 +958,7 @@ class FeeReceiptController extends Controller
                     round((float) $due->paid_amount - $row['amount'], 2)
                 );
 
+                $due->discount_amount = round((float) $due->discount_amount - $row['concession'], 2);
                 $due->save();
                 $this->ledger->recalculateDue($due);
             }
@@ -960,11 +985,15 @@ class FeeReceiptController extends Controller
 
             $receipt->update([
                 'status' => 'cancelled',
-                'cancellation_reason' => $validated['cancellation_reason'],
+                'cancellation_reason' => (!empty($validated['correction']) ? '[Correction] ' : '') . $validated['cancellation_reason'],
                 'cancelled_by' => Auth::id(),
                 'cancelled_at' => now(),
             ]);
         });
+
+        if (!empty($validated['correction'])) {
+            return redirect()->route('fee-receipts.create')->with('success', 'Original receipt cancelled. Select the same student and enter the corrected payment.');
+        }
 
         return redirect()
             ->route('fee-receipts.show', $feeReceipt)

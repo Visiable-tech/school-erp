@@ -218,6 +218,7 @@ class StudentFeeAssignmentController extends Controller
             ->where('academic_year_id', $request->academic_year_id)
             ->where('school_class_id', $request->school_class_id)
             ->where('status', 1)
+            ->with('section:id,name')
             ->withCount([
                 'installments as installment_count'
             ])
@@ -226,9 +227,10 @@ class StudentFeeAssignmentController extends Controller
                 'id',
                 'name',
                 'academic_year_id',
-                'school_class_id'
+                'school_class_id', 'section_id'
             ]);
 
+        $structures->each(function ($item) { $item->name .= ' — ' . ($item->section?->name ?? 'All Sections'); });
         return response()->json([
             'structures' => $structures
         ]);
@@ -840,6 +842,7 @@ class StudentFeeAssignmentController extends Controller
                 $schoolClass->id
             )
             ->where('status', 1)
+            ->forSection($section->id)
             ->with([
                 'installments' => function ($q) {
                     $q->where('status', 1)
@@ -849,6 +852,10 @@ class StudentFeeAssignmentController extends Controller
                 'installments.feeStructureItem.feeHead',
             ])
             ->firstOrFail();
+
+        if (!$structure->section_id && FeeStructure::where('school_id', $schoolId)->where('academic_year_id', $academicYear->id)->where('school_class_id', $schoolClass->id)->where('section_id', $section->id)->where('status', 1)->exists()) {
+            throw ValidationException::withMessages(['fee_structure_id' => 'Select a section-specific fee template.']);
+        }
 
         return [
             'academicYear' => $academicYear,
@@ -1071,6 +1078,7 @@ class StudentFeeAssignmentController extends Controller
                 $schoolClass->id
             )
             ->where('status', 1)
+            ->forSection($validated['section_id'] ?? null)
             ->with([
                 'installments' => function ($query) {
                     $query->where('status', 1)
@@ -1160,6 +1168,14 @@ class StudentFeeAssignmentController extends Controller
         * Skip students who already have an assignment
         * for this academic year.
         */
+        if ($structure->section_id) {
+            $enrollmentQuery->where('section_id', $structure->section_id);
+        } else {
+            $enrollmentQuery->whereNotIn('section_id', FeeStructure::where('school_id', $schoolId)
+                ->where('academic_year_id', $academicYear->id)->where('school_class_id', $schoolClass->id)
+                ->where('status', 1)->whereNotNull('section_id')->select('section_id'));
+        }
+
         $enrollmentQuery->whereDoesntHave(
             'feeAssignments',
             function ($query) use ($academicYear) {

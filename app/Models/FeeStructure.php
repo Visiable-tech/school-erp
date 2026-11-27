@@ -13,6 +13,7 @@ class FeeStructure extends Model
         'school_id',
         'academic_year_id',
         'school_class_id',
+        'section_id',
         'name',
         'description',
         'status',
@@ -35,6 +36,19 @@ class FeeStructure extends Model
     public function schoolClass()
     {
         return $this->belongsTo(SchoolClass::class);
+    }
+
+    public function section()
+    {
+        return $this->belongsTo(Section::class);
+    }
+
+    public function scopeForSection($query, $sectionId)
+    {
+        return $query->where(function ($q) use ($sectionId) {
+            $q->whereNull('section_id');
+            if ($sectionId) $q->orWhere('section_id', $sectionId);
+        });
     }
 
     public function items()

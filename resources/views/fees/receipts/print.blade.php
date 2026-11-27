@@ -223,7 +223,9 @@
                 <th>Fee Component</th>
                 <th>Installment</th>
                 <th>Due Date</th>
-                <th class="text-right">Paid</th>
+                <th class="text-right">Amount Before Concession</th>
+                        <th class="text-right">Concession</th>
+                        <th class="text-right">Amount Paid</th>
             </tr>
 
         </thead>
@@ -247,11 +249,9 @@
                         {{ optional($item->due_date)->format('d-m-Y') }}
                     </td>
 
-                    <td class="text-right">
-
-                        ₹{{ number_format($item->amount, 2) }}
-
-                    </td>
+                    <td class="text-right">₹{{ number_format((float) $item->amount + (float) $item->concession_amount, 2) }}</td>
+                            <td class="text-right">₹{{ number_format($item->concession_amount ?? 0, 2) }}</td>
+                            <td class="text-right">₹{{ number_format($item->amount, 2) }}</td>
 
                 </tr>
 
@@ -267,11 +267,13 @@
                 <td colspan="3"
                     class="text-right">
 
-                    Total Received
+                    Total
 
                 </td>
 
-                <td class="text-right">
+                <td class="text-right">₹{{ number_format($feeReceipt->items->sum('amount') + $feeReceipt->items->sum('concession_amount'), 2) }}</td>
+                        <td class="text-right">₹{{ number_format($feeReceipt->items->sum('concession_amount'), 2) }}</td>
+                        <td class="text-right">
 
                     ₹{{ number_format($feeReceipt->total_amount, 2) }}
 

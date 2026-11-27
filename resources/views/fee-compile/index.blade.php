@@ -104,6 +104,7 @@
 
                         <select name="school_class_id"
                                 id="school_class_id"
+                                disabled
                                 class="form-select"
                                 required>
 
@@ -111,18 +112,7 @@
                                 Select Class
                             </option>
 
-                            @foreach(
-                                $classes as $class
-                            )
 
-                                <option
-                                    value="{{ $class->id }}">
-
-                                    {{ $class->name }}
-
-                                </option>
-
-                            @endforeach
 
                         </select>
 
@@ -215,160 +205,84 @@
 
 
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+    const year = document.getElementById('academic_year_id');
+    const schoolClass = document.getElementById('school_class_id');
+    const section = document.getElementById('section_id');
+    const template = document.getElementById('fee_structure_id');
+    const submit = template.closest('form').querySelector('button[type="submit"]');
+    const classes = @json($classes->map(function ($class) { return $class->only(['id', 'name']); })->values());
+    const templateClasses = @json($templateClasses);
+    const oldClass = @json(old('school_class_id'));
+    const oldSection = @json(old('section_id'));
+    const oldTemplate = @json(old('fee_structure_id'));
+    let requestId = 0;
 
-document.addEventListener(
-    'DOMContentLoaded',
-    function () {
-
-        const year =
-            document.getElementById(
-                'academic_year_id'
-            );
-
-        const schoolClass =
-            document.getElementById(
-                'school_class_id'
-            );
-
-        const section =
-            document.getElementById(
-                'section_id'
-            );
-
-        const template =
-            document.getElementById(
-                'fee_structure_id'
-            );
-
-
-        async function loadData()
-        {
-            section.innerHTML =
-                '<option value="">All Sections</option>';
-
-            template.innerHTML =
-                '<option value="">Select Fee Template</option>';
-
-
-            if (
-                !year.value ||
-                !schoolClass.value
-            ) {
-                return;
-            }
-
-
-            const params =
-                new URLSearchParams({
-                    academic_year_id:
-                        year.value,
-
-                    school_class_id:
-                        schoolClass.value
-                });
-
-
-            try {
-
-                const [
-                    sectionResponse,
-                    templateResponse
-                ] = await Promise.all([
-
-                    fetch(
-                        '{{ route("fee-compile.sections") }}'
-                        + '?' + params
-                    ),
-
-                    fetch(
-                        '{{ route("fee-compile.templates") }}'
-                        + '?' + params
-                    )
-                ]);
-
-
-                if (
-                    !sectionResponse.ok ||
-                    !templateResponse.ok
-                ) {
-                    throw new Error(
-                        'Unable to load data.'
-                    );
-                }
-
-
-                const sections =
-                    await sectionResponse.json();
-
-                const templates =
-                    await templateResponse.json();
-
-
-                sections.forEach(
-                    function (item) {
-
-                        const option =
-                            document.createElement(
-                                'option'
-                            );
-
-                        option.value =
-                            item.id;
-
-                        option.textContent =
-                            item.name;
-
-                        section.appendChild(
-                            option
-                        );
-                    }
-                );
-
-
-                templates.forEach(
-                    function (item) {
-
-                        const option =
-                            document.createElement(
-                                'option'
-                            );
-
-                        option.value =
-                            item.id;
-
-                        option.textContent =
-                            item.name;
-
-                        template.appendChild(
-                            option
-                        );
-                    }
-                );
-
-            } catch (error) {
-
-                console.error(error);
-
-                alert(
-                    'Unable to load Sections or Fee Templates.'
-                );
-            }
-        }
-
-
-        year.addEventListener(
-            'change',
-            loadData
-        );
-
-        schoolClass.addEventListener(
-            'change',
-            loadData
-        );
-
+    function reset(select, label) {
+        select.replaceChildren(new Option(label, ''));
     }
-);
-
+    function append(select, items) {
+        items.forEach(item => select.add(new Option(item.name, item.id)));
+    }
+    function loadClasses(restore = false) {
+        const allowed = (templateClasses[year.value] || []).map(String);
+        const available = classes.filter(item => allowed.includes(String(item.id)));
+        reset(schoolClass, !year.value ? 'Select Academic Year First' :
+            available.length ? 'Select Class' : 'No Classes with Fee Templates');
+        append(schoolClass, available);
+        schoolClass.disabled = !available.length;
+        if (restore && oldClass) schoolClass.value = oldClass;
+        loadData(restore);
+    }
+    async function loadData(restore = false) {
+        const id = ++requestId;
+        reset(section, 'All Sections');
+        reset(template, 'Select Fee Template');
+        section.disabled = template.disabled = submit.disabled = true;
+        if (!year.value || !schoolClass.value) return;
+        const params = new URLSearchParams({academic_year_id: year.value,
+            school_class_id: schoolClass.value});
+        try {
+            const responses = await Promise.all([
+                fetch('{{ route("fee-compile.sections") }}?' + params, {headers: {Accept: 'application/json'}}),
+                fetch('{{ route("fee-compile.templates") }}?' + params, {headers: {Accept: 'application/json'}})
+            ]);
+            if (responses.some(response => !response.ok)) throw new Error('Unable to load data');
+            const [sections, templates] = await Promise.all(responses.map(response => response.json()));
+            if (id !== requestId) return;
+            append(section, sections);
+            append(template, templates);
+            section.disabled = false;
+            template.disabled = !templates.length;
+            if (!templates.length) reset(template, 'No Fee Templates Available');
+            if (restore && oldSection) { section.value = oldSection; section.dispatchEvent(new Event('change')); return; }
+            if (restore && oldTemplate) template.value = oldTemplate;
+            submit.disabled = !template.value;
+        } catch (error) {
+            if (id !== requestId) return;
+            reset(template, 'Unable to load Fee Templates');
+            console.error(error);
+        }
+    }
+    section.addEventListener('change', async () => {
+        const id = ++requestId;
+        reset(template, 'Select Fee Template');
+        template.disabled = submit.disabled = true;
+        const params = new URLSearchParams({academic_year_id: year.value, school_class_id: schoolClass.value, section_id: section.value});
+        try {
+            const response = await fetch('{{ route("fee-compile.templates") }}?' + params, {headers: {Accept: 'application/json'}});
+            if (!response.ok) throw new Error('Unable to load templates');
+            const rows = await response.json();
+            if (id !== requestId) return;
+            append(template, rows);
+            template.disabled = !rows.length;
+        } catch (e) { if (id === requestId) reset(template, 'Unable to load Fee Templates'); }
+    });
+    year.addEventListener('change' , () => loadClasses());
+    schoolClass.addEventListener('change', () => loadData());
+    template.addEventListener('change', () => { submit.disabled = !template.value; });
+    loadClasses(true);
+});
 </script>
 
 @endsection

@@ -1,6 +1,6 @@
 @extends('accounts.shell')
 @section('accounts_content')
-<h4>Chart of Accounts & Trial Balance</h4><p class="text-muted">Posted ledger entries only. Operational payments are not automatically posted.</p>
+<h4>Chart of Accounts & Trial Balance</h4><p class="text-muted">Posted ledger entries only. New daily expenses are automatically posted. Other operational payments may require manual posting.</p>
 @can('accounts.ledger.create')
 <form method="POST" action="{{ route('accounts.ledger.account') }}" class="row g-2 mb-3">@csrf
 <div class="col-md-2"><input class="form-control" name="code" placeholder="Code" required></div><div class="col-md-4"><input class="form-control" name="name" placeholder="Account name" required></div><div class="col-md-3"><select class="form-select" name="type">@foreach(['cash','bank','asset','liability','equity','income','expense'] as $t)<option>{{ $t }}</option>@endforeach</select></div><div class="col"><button class="btn btn-success">Add account</button></div></form>

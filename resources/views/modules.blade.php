@@ -71,18 +71,21 @@
 @endphp
 @if($financeLanding)
             <div class="erp-module-tile">
-                <a href="{{ route('accounts.index') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
+                <a href="{{ route($financeLanding) }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
                     <i class="bi bi-cash-stack erp-module-icon"></i>
                     <span>Accounts &amp; Fee Management</span>
                 </a>
             </div>
         @endif
 {{-- Transport Fee Management --}}
-        @if((auth()->user()?->hasAnyRole(['Admin','Super Admin']) ?? false) && \Illuminate\Support\Facades\Route::has('transport.index'))
+        @if((auth()->user()?->can('front-office.view') ?? false) && \Illuminate\Support\Facades\Route::has('front-office.index'))
+<div class="erp-module-tile"><a href="{{ route('front-office.index') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100"><i class="bi bi-people erp-module-icon"></i><span>Front Office Management</span></a></div>
+@endif
+@if((auth()->user()?->hasAnyRole(['Admin','Super Admin']) ?? false) && \Illuminate\Support\Facades\Route::has('transport.index'))
             <div class="erp-module-tile">
                 <a href="{{ route('transport.index') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
                     <i class="bi bi-bus-front erp-module-icon"></i>
-                    <span>Transport Management</span>
+                    <span>Transport Fee Management</span>
                 </a>
             </div>
         @endif

@@ -26,6 +26,8 @@
                 $module = 'students';
             } elseif (preg_match('/^(academic-year|school|wing|section|subject|class-subject|section-group|calendar-event-types|school-calendar)/', $routeName)) {
                 $module = 'academic';
+            } elseif (str_starts_with($routeName, 'front-office.')) {
+                $module = 'front-office';
             } elseif (str_starts_with($routeName, 'transport.')) {
                 $module = 'transport';
             } elseif (preg_match('/^(inventory|communication|ticket|visitor)/', $routeName)) {
@@ -62,6 +64,11 @@
             @include('accounts.sidebar')
         @elseif($module === 'hr')
             @include('partials.admin.menus.hr')
+        @elseif($module === 'front-office')
+            <div class="menu-title">Front Office Management</div>
+            @can('front-office.view')<a href="{{ route('front-office.index') }}" class="{{ request()->routeIs('front-office.index') ? 'active' : '' }}"><i class="bi bi-people"></i> Visitor Register</a>@endcan
+            @can('front-office.create')<a href="{{ route('front-office.create') }}" class="{{ request()->routeIs('front-office.create') ? 'active' : '' }}"><i class="bi bi-person-plus"></i> Add Visitor</a>@endcan
+            @can('front-office.view')<a href="{{ route('front-office.report') }}" class="{{ request()->routeIs('front-office.report') ? 'active' : '' }}"><i class="bi bi-bar-chart"></i> Daily Visitor Report</a>@endcan
         @elseif($module === 'transport')
             <div class="menu-title">Transport Management</div>
             <a href="{{ route('transport.index') }}" class="{{ request()->routeIs('transport.*') ? 'active' : '' }}"><i class="bi bi-bus-front"></i> Transport</a>

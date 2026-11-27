@@ -47,10 +47,13 @@
     }
 @endphp
 @if($financeLanding)
-<a class="dropdown-item" href="{{ route('accounts.index') }}"><i class="bi bi-cash-stack me-2"></i>Accounts &amp; Fee Management</a>
+<a class="dropdown-item" href="{{ route($financeLanding) }}"><i class="bi bi-cash-stack me-2"></i>Accounts &amp; Fee Management</a>
+@endif
+@if((auth()->user()?->can('front-office.view') ?? false) && \Illuminate\Support\Facades\Route::has('front-office.index'))
+<a class="dropdown-item" href="{{ route('front-office.index') }}"><i class="bi bi-people me-2"></i>Front Office Management</a>
 @endif
 @if((auth()->user()?->hasAnyRole(['Admin','Super Admin']) ?? false) && \Illuminate\Support\Facades\Route::has('transport.index'))
-<a class="dropdown-item" href="{{ route('transport.index') }}"><i class="bi bi-bus-front me-2"></i>Transport Management</a>
+<a class="dropdown-item" href="{{ route('transport.index') }}"><i class="bi bi-bus-front me-2"></i>Transport Fee Management</a>
 @endif
 @if((auth()->user()?->hasAnyRole(['Admin','Super Admin'])) && \Illuminate\Support\Facades\Route::has('employee-info.dashboard'))
 <a class="dropdown-item" href="{{ route('employee-info.dashboard') }}"><i class="bi bi-person-vcard me-2"></i>Employee Information System</a>

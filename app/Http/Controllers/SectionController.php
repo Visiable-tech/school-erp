@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Database\QueryException;
 
 class SectionController extends Controller
 {
@@ -310,7 +311,31 @@ class SectionController extends Controller
             );
         }
 
-        $section->delete();
+        $studentCount = DB::table('student_enrollments')
+            ->where('section_id', $section->id)
+            ->count();
+
+        if ($studentCount > 0) {
+            return back()->with(
+                'error',
+                "This section cannot be deleted because {$studentCount} "
+                . "student enrollment record(s) are assigned to it."
+            );
+        }
+
+        try {
+            $section->delete();
+        } catch (QueryException $e) {
+            if ((int) ($e->errorInfo[1] ?? 0) === 1451) {
+                return back()->with(
+                    'error',
+                    'This section is linked to existing records '
+                    . 'and cannot be deleted.'
+                );
+            }
+
+            throw $e;
+        }
 
         return redirect()
             ->route('sections.index')

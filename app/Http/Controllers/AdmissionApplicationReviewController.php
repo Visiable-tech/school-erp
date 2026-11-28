@@ -17,7 +17,7 @@ class AdmissionApplicationReviewController extends Controller
         if (
             !in_array(
                 $admissionApplication->application_status,
-                ['submitted', 'under_review']
+                ['submitted', 'under_review', 'waiting_list']
             )
         ) {
             return back()->with(
@@ -64,7 +64,7 @@ class AdmissionApplicationReviewController extends Controller
         if (
             !in_array(
                 $admissionApplication->application_status,
-                ['submitted', 'under_review']
+                ['submitted', 'under_review', 'waiting_list']
             )
         ) {
             return back()->with(
@@ -158,7 +158,7 @@ class AdmissionApplicationReviewController extends Controller
         if (
             !in_array(
                 $admissionApplication->application_status,
-                ['submitted', 'under_review']
+                ['submitted', 'under_review', 'waiting_list']
             )
         ) {
             return back()->with(

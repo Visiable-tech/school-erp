@@ -84,9 +84,9 @@
 
 @if((auth()->user()?->hasAnyRole(['Admin','Super Admin']) ?? false) && \Illuminate\Support\Facades\Route::has('transport.index'))
             <div class="erp-module-tile">
-                <a href="{{ route('transport.index') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
+                <a href="{{ route('transport.dashboard') }}" class="erp-module-card text-decoration-none d-flex flex-column align-items-center justify-content-center h-100">
                     <i class="bi bi-bus-front erp-module-icon"></i>
-                    <span>Transport Fee Management</span>
+                    <span>Transport Management</span>
                 </a>
             </div>
         @endif

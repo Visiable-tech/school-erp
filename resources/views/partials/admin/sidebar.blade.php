@@ -70,6 +70,7 @@
             @can('front-office.create')<a href="{{ route('front-office.create') }}" class="{{ request()->routeIs('front-office.create') ? 'active' : '' }}"><i class="bi bi-person-plus"></i> Add Visitor</a>@endcan
             @can('front-office.view')<a href="{{ route('front-office.report') }}" class="{{ request()->routeIs('front-office.report') ? 'active' : '' }}"><i class="bi bi-bar-chart"></i> Daily Visitor Report</a>@endcan
         @elseif($module === 'transport')
+            @include('partials.admin.menus.transport')
             <div class="menu-title">Transport Management</div>
             <a href="{{ route('transport.index') }}" class="{{ request()->routeIs('transport.*') ? 'active' : '' }}"><i class="bi bi-bus-front"></i> Transport</a>
         @elseif($module === 'operations')

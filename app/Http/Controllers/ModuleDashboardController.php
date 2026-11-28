@@ -36,21 +36,7 @@ class ModuleDashboardController extends Controller
 
     public function admission(Request $request)
     {
-        abort_unless($request->user()->hasAnyRole(['Admin', 'Super Admin']) ||
-            $request->user()->can('admission-application.view') ||
-            $request->user()->can('admission-candidate.view'), 403);
-
-        return $this->dashboard($request, 'Admission', [
-            'Candidates' => 'admission_candidates',
-            'Enquiries' => 'admission_enquiries',
-            'Registrations' => 'admission_applications',
-            'Form Sales' => 'admission_form_sales',
-        ], [
-            ['label'=>'Candidates','route'=>'admission-candidates.index'],
-            ['label'=>'Enquiries','route'=>'admission-enquiries.index'],
-            ['label'=>'Registrations','route'=>'admission-applications.index'],
-            ['label'=>'Form Sales','route'=>'admission-form-sales.index'],
-        ]);
+        return app(AdmissionAnalyticsController::class)->index($request);
     }
 
     public function students(Request $request)

@@ -920,7 +920,8 @@
                 $admissionApplication->application_status,
                 [
                     'submitted',
-                    'under_review'
+                    'under_review',
+                    'waiting_list'
                 ]
             )
         )

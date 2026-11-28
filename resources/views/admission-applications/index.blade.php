@@ -63,6 +63,7 @@
                             'draft' => 'Draft',
                             'submitted' => 'Submitted',
                             'under_review' => 'Under Review',
+                            'waiting_list' => 'Waiting List',
                             'approved' => 'Approved',
                             'rejected' => 'Rejected',
                             'admitted' => 'Admitted'
@@ -217,6 +218,11 @@
 
                             @endcan
 
+                            @can('admission-application.edit')
+                            @if(in_array($application->application_status,['submitted','under_review']))
+                            <form class="d-inline" method="POST" action="{{ route('admission.waitlist',$application) }}">@csrf<button class="btn btn-sm btn-outline-warning">Waitlist</button></form>
+                            @endif
+                            @endcan
                             @if($application->application_status === 'approved' && !$application->student)
                                 @can('student-admission.create')
                                     <a href="{{ route('student-admissions.create', $application) }}" class="btn btn-sm btn-success ms-1" title="Complete Admission"><i class="bi bi-person-check"></i> Admit</a>

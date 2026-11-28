@@ -53,6 +53,9 @@ class AdmissionApplicationController extends Controller
         }
 
 
+        if ($request->filled('year')) {
+            $query->where('academic_year_id', (int) $request->year);
+        }
         if ($request->filled('application_status')) {
 
             $query->where(

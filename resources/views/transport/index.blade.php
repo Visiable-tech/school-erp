@@ -23,7 +23,7 @@
     @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="alert alert-danger"><ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 
-    <div class="card mb-4"><div class="card-header"><h5 class="mb-0">Transport Route Master</h5></div><div class="card-body">
+    <div class="card mb-4"><div class="card-header"><h5 class="mb-0" id="transport-routes">Transport Route Master</h5></div><div class="card-body">
         <form method="POST" action="{{ route('transport.routes.save') }}" id="route-form" class="row g-3">@csrf
             <input type="hidden" name="route_id" value=""><input type="hidden" name="status" value="1">
             <div class="col-md-2"><label class="form-label">Route Code</label><input class="form-control" name="code" required></div>
@@ -41,7 +41,7 @@
         </tbody></table></div>
     </div></div>
 
-    <div class="card mb-4"><div class="card-header"><h5 class="mb-0">Route Stops &amp; Monthly Fees</h5></div><div class="card-body">
+    <div class="card mb-4"><div class="card-header"><h5 class="mb-0" id="transport-stops">Route Stops &amp; Monthly Fees</h5></div><div class="card-body">
         <form method="POST" action="{{ route('transport.stops.save') }}" id="stop-form" class="row g-3">@csrf
             <input type="hidden" name="stop_id" value=""><input type="hidden" name="status" value="1">
             <div class="col-md-3"><label class="form-label">Transport Route</label><select class="form-select" name="transport_route_id" required><option value="">Select Route</option>@foreach($routes as $route)<option value="{{ $route->id }}">{{ $route->name }}</option>@endforeach</select></div>
@@ -62,7 +62,7 @@
         </tbody></table></div>
     </div></div>
 
-    <div class="card mb-4"><div class="card-header"><h5 class="mb-0">Student Transport Assignment</h5></div><div class="card-body">
+    <div class="card mb-4"><div class="card-header"><h5 class="mb-0" id="transport-assignments">Student Transport Assignment</h5></div><div class="card-body">
         <form method="POST" action="{{ route('transport.assign') }}" id="assignment-form" class="row g-3">@csrf
             <input type="hidden" name="assignment_id" value="">
             <div class="col-md-2"><label class="form-label">Academic Session *</label><select class="form-select" id="transport_year" required><option value="">Select Session</option>@foreach($years as $year)<option value="{{ $year->id }}">{{ $year->name }}</option>@endforeach</select></div>

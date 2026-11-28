@@ -20,5 +20,7 @@ Route::prefix('student')
         Route::post('/logout', [StudentAuthController::class, 'logout']);
     });
 
-
-require __DIR__.'/teacher_api.php';    
+// Mobile API routes
+require __DIR__.'/teacher_api.php';
+require __DIR__.'/student_academic_api.php';
+require __DIR__.'/teacher_classwork_notice_api.php';

@@ -3780,13 +3780,16 @@ require __DIR__.'/accounts_reports.php';
 
 require __DIR__.'/student_notices.php';
 
-require __DIR__.'/teacher_classwork_notice_api.php';
+
 
 require __DIR__.'/front_office.php';
 
 require __DIR__.'/admission_analytics.php';
 
 require __DIR__.'/transport_operations.php';
+
+
+
 
 
 

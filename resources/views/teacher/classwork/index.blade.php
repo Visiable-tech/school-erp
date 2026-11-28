@@ -1,11 +1,11 @@
 @extends('layouts.admin')
-@section('title', 'Classwork / Assignments')
+@section('title', 'Homework / Classwork')
 @section('content')
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4>Classwork / Assignments</h4>
+        <h4>Homework / Classwork</h4>
         @hasanyrole('Teacher|Super Admin')
-            <a href="{{ route('teacher.classwork.create') }}" class="btn btn-primary">+ Upload Classwork</a>
+            <a href="{{ route('teacher.classwork.create') }}" class="btn btn-primary">+ Publish Work</a>
         @endhasanyrole
     </div>
 
@@ -14,7 +14,7 @@
     @endif
 
     <div class="mb-3 d-flex flex-wrap gap-2">
-        @foreach(['all' => 'All', 'pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected', 'not-uploaded' => 'Not Uploaded'] as $key => $label)
+        @foreach(['all' => 'All', 'pending' => 'Pending', 'approved' => 'Published', 'rejected' => 'Rejected', 'not-uploaded' => 'Not Uploaded'] as $key => $label)
             <a class="btn btn-sm {{ $status === $key ? 'btn-primary' : 'btn-outline-primary' }}"
                href="{{ route('teacher.classwork.index', ['status' => $key]) }}">{{ $label }}</a>
         @endforeach
@@ -66,22 +66,12 @@
                             <td>{{ $item->assignment?->schoolClass?->name }} / {{ $item->assignment?->section?->name }}</td>
                             <td>{{ $item->assignment?->subject?->name ?? 'General' }}</td>
                             <td>{{ $item->teacher?->name }}</td>
-                            <td>{{ ucfirst($item->approval_status) }}</td>
+                            <td>{{ $item->approval_status === 'approved' ? 'Published' : ucfirst($item->approval_status) }}</td>
                             <td>
-                                @if($item->approval_status === 'pending' && $item->teacher_user_id === auth()->id())
+                                @if(in_array($item->approval_status, ['pending','approved'], true) && (int)$item->teacher_user_id === (int)auth()->id())
                                     <a class="btn btn-sm btn-outline-primary mb-1" href="{{ route('teacher.classwork.edit', $item) }}">Edit</a>
                                 @endif
-                                @can('teacher-classwork.review')
-                                    @if(auth()->user()->hasAnyRole(['Super Admin', 'Admin']) && $item->approval_status === 'pending')
-                                        <form method="POST" action="{{ route('teacher.classwork.review', $item) }}">
-                                            @csrf
-                                            @method('PATCH')
-                                            <textarea name="review_note" class="form-control form-control-sm mb-1" placeholder="Review note (optional)"></textarea>
-                                            <button class="btn btn-sm btn-success" name="approval_status" value="approved">Approve</button>
-                                            <button class="btn btn-sm btn-danger" name="approval_status" value="rejected">Reject</button>
-                                        </form>
-                                    @endif
-                                @endcan
+
                             </td>
                         </tr>
                     @empty

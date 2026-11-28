@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 class TeacherClassworkController extends Controller {
  private function school(Request $r):int {abort_unless($r->user()?->school_id,403);return (int)$r->user()->school_id;}
- private function manager(Request $r):bool{return $r->user()->hasAnyRole(['Super Admin','Admin']) && $r->user()->can('teacher-classwork.review');}
+ private function manager(Request $r):bool{return $r->user()->hasAnyRole(['Super Admin','Admin']);}
  private function assignments(Request $r){$q=TeacherAssignment::where('school_id',$this->school($r))->where('status',1);
    if(!$this->manager($r))$q->where('teacher_user_id',$r->user()->id);
    return $q->with(['schoolClass','section','subject'])->orderBy('school_class_id')->get();}
@@ -26,14 +26,12 @@ class TeacherClassworkController extends Controller {
   'teacher_assignment_id'=>['required','integer',Rule::exists('teacher_assignments','id')->where('school_id',$school)->where('teacher_user_id',$r->user()->id)->where('status',1)],
   'work_date'=>['required','date'],'title'=>['required','string','max:200'],'type'=>['required',Rule::in(['classwork','homework','assignment'])],
   'description'=>['required','string','max:10000'],'due_date'=>['nullable','date','after_or_equal:work_date']]);
-  TeacherClasswork::create($data+['school_id'=>$school,'teacher_user_id'=>$r->user()->id,'approval_status'=>'pending']);
-  return redirect()->route('teacher.classwork.index')->with('success','Submitted for approval.');}
- public function edit(Request $r,TeacherClasswork $classwork){abort_unless($classwork->school_id===$this->school($r) && $classwork->teacher_user_id===$r->user()->id && $classwork->approval_status==='pending',403);
+  TeacherClasswork::create($data+['school_id'=>$school,'teacher_user_id'=>$r->user()->id,'approval_status'=>'approved']);
+  return redirect()->route('teacher.classwork.index')->with('success','Published successfully.');}
+ public function edit(Request $r,TeacherClasswork $classwork){abort_unless($classwork->school_id===$this->school($r) && $classwork->teacher_user_id===$r->user()->id && in_array($classwork->approval_status,['pending','approved'],true) && $this->assignments($r)->where('teacher_user_id',$r->user()->id)->contains('id',$classwork->teacher_assignment_id),403);
   $assignments=$this->assignments($r)->where('teacher_user_id',$r->user()->id);return view('teacher.classwork.form',compact('assignments','classwork'));}
- public function update(Request $r,TeacherClasswork $classwork){abort_unless($classwork->school_id===$this->school($r) && $classwork->teacher_user_id===$r->user()->id && $classwork->approval_status==='pending',403);
+ public function update(Request $r,TeacherClasswork $classwork){abort_unless($classwork->school_id===$this->school($r) && $classwork->teacher_user_id===$r->user()->id && in_array($classwork->approval_status,['pending','approved'],true) && $this->assignments($r)->where('teacher_user_id',$r->user()->id)->contains('id',$classwork->teacher_assignment_id),403);
   $data=$r->validate(['work_date'=>['required','date'],'title'=>['required','string','max:200'],'type'=>['required',Rule::in(['classwork','homework','assignment'])],'description'=>['required','string','max:10000'],'due_date'=>['nullable','date','after_or_equal:work_date']]);
-  $classwork->update($data);return redirect()->route('teacher.classwork.index')->with('success','Updated.');}
- public function review(Request $r,TeacherClasswork $classwork){abort_unless($this->manager($r) && $classwork->school_id===$this->school($r),403);
-  $data=$r->validate(['approval_status'=>['required',Rule::in(['approved','rejected'])],'review_note'=>['nullable','string','max:2000']]);
-  $classwork->update($data+['reviewed_by'=>$r->user()->id,'reviewed_at'=>now()]);return back()->with('success','Review saved.');}
+  $classwork->update($data+['approval_status'=>'approved']);return redirect()->route('teacher.classwork.index')->with('success','Updated.');}
+ public function review(Request $r,TeacherClasswork $classwork){abort(410,'Approval workflow has been discontinued.');}
 }

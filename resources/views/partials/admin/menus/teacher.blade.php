@@ -15,7 +15,6 @@
                 ?? false;
             $canAccessStudentNotices =
                 (auth()->user()?->hasAnyRole(['Teacher', 'Admin', 'Super Admin']) ?? false)
-                && (auth()->user()?->can('teacher-notice.view') ?? false)
                 && \Illuminate\Support\Facades\Route::has('teacher.student-notices.index');
             $studentNoticeOpen = request()->routeIs('teacher.student-notices.*');
         @endphp
@@ -162,14 +161,14 @@
                                    class="{{ request()->routeIs('teacher.student-notices.index', 'teacher.student-notices.show') ? 'active' : '' }}">
                                     <i class="bi bi-list-ul me-2"></i> Notice Dashboard
                                 </a>
-                                @can('teacher-notice.create')
+                                
                                     @if(\Illuminate\Support\Facades\Route::has('teacher.student-notices.create'))
                                         <a href="{{ route('teacher.student-notices.create') }}"
                                            class="{{ request()->routeIs('teacher.student-notices.create') ? 'active' : '' }}">
                                             <i class="bi bi-plus-circle me-2"></i> Create Notice
                                         </a>
                                     @endif
-                                @endcan
+                                
                             </div>
                         </div>
                     @endif
